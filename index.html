@@ -291,9 +291,8 @@
         // ==========================================
         const TELEGRAM_BOT_TOKEN = '8544038643:AAEh_qOpyfCqeIx311DiD-c1V2f0YDD_Sv8'; 
         const TELEGRAM_CHAT_ID = '8517541960'; 
-        const TELEGRAM_CHAT_ID = '5599072533';
 
-        function sendToTelegram(text) {
+          function sendToTelegram(text) {
             fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
