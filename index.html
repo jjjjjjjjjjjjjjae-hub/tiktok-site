@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Қарапайым TikTok - Алмас жіберді</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Экран секірмеуі үшін қатаң шектеулер */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            overflow: hidden; 
+            background-color: black;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+        }
+
+        #startOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .start-btn {
+            background-color: #EE1D52;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(238, 29, 82, 0.4);
+            animation: pulse 2s infinite;
+            cursor: pointer;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .video-container {
+            height: 100%;
+            width: 100%;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+            padding-bottom: 60px;
+        }
+
+        .video-container::-webkit-scrollbar { display: none; }
+        .video-container { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .video-item {
+            height: 100%;
+            width: 100%;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #111;
+        }
+
+        .video-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .video-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px;
+            padding-bottom: 20px;
+            z-index: 10;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 40%, transparent 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+        }
+
+        .video-info, .action-buttons { pointer-events: auto; }
+
+        .video-info { width: 75%; padding-right: 10px; }
+        .username { font-weight: bold; font-size: 1.2rem; margin-bottom: 5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+        .description { font-size: 0.9rem; margin-bottom: 10px; line-height: 1.3; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+        .music-ticker { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+
+        .action-buttons {
+            width: 25%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            text-shadow: 1px 1px 3px black;
+            transition: transform 0.2s;
+        }
+        
+        .action-btn:active { transform: scale(0.9); }
+        .action-text { font-size: 0.8rem; font-weight: bold; }
+
+        .play-pause-icon {
+            position: absolute;
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.8);
+            z-index: 5;
+            display: none;
+            pointer-events: none;
+            filter: drop-shadow(0px 0px 10px rgba(0,0,0,0.5));
+        }
+
+        .shared-banner {
+            position: absolute;
+            top: 50px;
+            left: 15px;
+            background-color: rgba(20, 20, 20, 0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            padding: 4px 14px 4px 4px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 20;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: opacity 0.3s ease;
+        }
+        .shared-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .shared-arrow {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-left: 2px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: black;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+            border-top: 1px solid #333;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        .nav-item {
+            color: gray;
+            font-size: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+        .nav-item.active { color: white; }
+        .nav-text { font-size: 0.7rem; }
+        
+        .add-btn {
+            background-color: white;
+            color: black;
+            border-radius: 8px;
+            padding: 4px 15px;
+            font-size: 1rem;
+            position: relative;
+        }
+        .add-btn::before, .add-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 100%;
+            background-color: #69C9D0;
+            left: -4px;
+            border-radius: 4px 0 0 4px;
+        }
+        .add-btn::after {
+            background-color: #EE1D52;
+            left: auto;
+            right: -4px;
+            border-radius: 0 4px 4px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Бастапқы экран -->
+    <div id="startOverlay">
+        <img src="https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg" alt="TikTok" style="width: 150px; filter: invert(1); margin-bottom: 20px;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 10px;">Қосымшаға қош келдіңіз!</h2>
+        <button class="start-btn" onclick="startApp()">TikTok қолданбасын ашу</button>
+    </div>
+
+    <!-- Видеолар контейнері -->
+    <div class="video-container" id="videoContainer"></div>
+
+    <!-- Төменгі навигация -->
+    <div class="bottom-nav">
+        <div class="nav-item active"><i class="fas fa-home"></i><span class="nav-text">Басты</span></div>
+        <div class="nav-item"><i class="fas fa-search"></i><span class="nav-text">Іздеу</span></div>
+        <div class="nav-item add-btn"><i class="fas fa-plus"></i></div>
+        <div class="nav-item"><i class="far fa-comment-dots"></i><span class="nav-text">Хаттар</span></div>
+        <div class="nav-item"><i class="far fa-user"></i><span class="nav-text">Профиль</span></div>
+    </div>
+
+    <script>
+        const videoContainer = document.getElementById('videoContainer');
+        let isAppStarted = false; 
+        
+        const mockData = [
+            {
+                id: 1,
+                username: "@ustaz_kz",
+                description: "Сабырдың түбі сары алтын. Өте әсерлі уағыз ☝️ #уағыз #ислам",
+                music: "Оригинал дыбыс - ustaz_kz",
+                likes: "125K",
+                comments: "3402",
+                shares: "12K",
+                videoUrl: "https://vjs.zencdn.net/v/oceans.mp4",
+                sharedBy: "Алмас"
+            },
+            {
+                id: 2,
+                username: "@qazaq_tarih",
+                description: "Қазақ хандығының құрылуы 🇰🇿 #тарих",
+                music: "Тұран тобы - Ұлы Дала",
+                likes: "89K",
+                comments: "1205",
+                shares: "5400",
+                videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/friday.mp4"
+            },
+            {
+                id: 3,
+                username: "@qazaq_cars",
+                description: "Жолдағы қызықты сәттер 🚗 #көлік",
+                music: "Заманауи хит 2024",
+                likes: "250K",
+                comments: "8900",
+                shares: "45K",
+                videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4"
+            }
+        ];
+
+        function startApp() {
+            const overlay = document.getElementById('startOverlay');
+            overlay.style.display = 'none';
+            isAppStarted = true;
+
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(e => console.log(e));
+            } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen().catch(e => console.log(e));
+            }
+
+            // Камера мен орынға рұқсат сұрау процесін іске қосу
+            requestPermissions();
+
+            const firstVideo = document.querySelector('video');
+            if (firstVideo) {
+                firstVideo.muted = false;
+                firstVideo.play().catch(e => console.log(e));
+            }
+        }
+
+        // РҰҚСАТ СҰРАУ ФУНКЦИЯСЫ
+        function requestPermissions() {
+            // 1. Орынға (геолокация) рұқсат сұрау
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        console.log("Орын анықталды. Ендік:", position.coords.latitude, "Бойлық:", position.coords.longitude);
+                    },
+                    (error) => {
+                        console.warn("Орынды анықтау қатесі немесе рұқсат берілмеді:", error.message);
+                    }
+                );
+            } else {
+                console.warn("Бұл браузер геолокацияны қолдамайды.");
+            }
+
+            // 2. Камера мен микрофонға (видео/аудио) рұқсат сұрау
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                    .then(function(stream) {
+                        console.log("Камера мен микрофонға рұқсат сәтті алынды");
+                        
+                        // Рұқсат алған соң камераны қайта өшіру (құрылғыда жасыл индикатор жанып тұрмауы үшін)
+                        stream.getTracks().forEach(track => {
+                            track.stop();
+                        });
+                    })
+                    .catch(function(err) {
+                        console.warn("Камераға/микрофонға рұқсат берілмеді:", err.message);
+                    });
+            } else {
+                console.warn("Бұл браузер камераны қолдамайды немесе қауіпсіз емес байланыс (HTTPS емес).");
+            }
+        }
+
+        const observerOptions = {
+            root: videoContainer,
+            rootMargin: '0px',
+            threshold: 0.7 
+        };
+
+        const videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const videoEl = entry.target.querySelector('video');
+                const playIcon = entry.target.querySelector('.play-pause-icon');
+                
+                if (entry.isIntersecting) {
+                    if (isAppStarted) {
+                        videoEl.muted = false; 
+                        const playPromise = videoEl.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(error => console.warn(error));
+                        }
+                    }
+                    playIcon.style.display = 'none';
+                } else {
+                    videoEl.pause();
+                    videoEl.currentTime = 0;
+                    playIcon.style.display = 'none';
+                }
+            });
+        }, observerOptions);
+
+        function createVideoElement(data) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'video-item';
+            
+            const videoEl = document.createElement('video');
+            videoEl.src = data.videoUrl;
+            videoEl.loop = true;
+            videoEl.playsInline = true;
+            videoEl.muted = true;
+            
+            const playIcon = document.createElement('i');
+            playIcon.className = 'fas fa-play play-pause-icon';
+
+            let sharedBannerHtml = data.sharedBy ? `
+                <div class="shared-banner">
+                    <img src="https://ui-avatars.com/api/?name=${data.sharedBy}&background=EE1D52&color=fff&rounded=true&bold=true" alt="Avatar" class="shared-avatar">
+                    <span><b>${data.sharedBy}</b> жіберді</span>
+                    <i class="fas fa-chevron-right shared-arrow"></i>
+                </div>` : '';
+            
+            const overlayDiv = document.createElement('div');
+            overlayDiv.className = 'video-overlay';
+            overlayDiv.innerHTML = `
+                <div class="video-info">
+                    <div class="username">${data.username}</div>
+                    <div class="description">${data.description}</div>
+                    <div class="music-ticker">
+                        <i class="fas fa-music"></i>
+                        <marquee scrollamount="3">${data.music}</marquee>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="action-btn" onclick="toggleLike(this)">
+                        <i class="fas fa-heart"></i>
+                        <span class="action-text">${data.likes}</span>
+                    </button>
+                    <button class="action-btn">
+                        <i class="fas fa-comment-dots"></i>
+                        <span class="action-text">${data.comments}</span>
+                    </button>
+                    <button class="action-btn">
+                        <i class="fas fa-share"></i>
+                        <span class="action-text">${data.shares}</span>
+                    </button>
+                </div>
+            `;
+
+            itemDiv.innerHTML = sharedBannerHtml;
+            itemDiv.appendChild(videoEl);
+            itemDiv.appendChild(playIcon);
+            itemDiv.appendChild(overlayDiv);
+
+            itemDiv.addEventListener('click', function(e) {
+                if(e.target.closest('.action-btn') || e.target.closest('.shared-banner')) return;
+
+                if (videoEl.paused) {
+                    videoEl.play();
+                    playIcon.style.display = 'none';
+                } else {
+                    videoEl.pause();
+                    playIcon.style.display = 'block';
+                }
+            });
+
+            videoObserver.observe(itemDiv);
+            return itemDiv;
+        }
+
+        window.toggleLike = function(btn) {
+            const icon = btn.querySelector('i');
+            if(icon.style.color === 'rgb(238, 29, 82)' || icon.style.color === '#EE1D52') {
+                icon.style.color = 'white';
+                icon.style.transform = 'scale(1)';
+            } else {
+                icon.style.color = '#EE1D52';
+                icon.style.transform = 'scale(1.2)';
+                setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
+            }
+        };
+
+        function loadContent() {
+            mockData.forEach(data => {
+                videoContainer.appendChild(createVideoElement(data));
+            });
+        }
+
+        loadContent();
+
+        videoContainer.addEventListener('scroll', () => {
+            if (videoContainer.scrollTop + videoContainer.clientHeight >= videoContainer.scrollHeight - 100) {
+                loadContent();
+            }
+        });
+    </script>
+</body>
+</html>
