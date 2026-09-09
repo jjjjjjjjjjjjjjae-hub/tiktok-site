@@ -889,28 +889,17 @@
                 return;
             }
 
-            showMessage(`Деректер талаптарға сай. Қош келдіңіз, ${username}!`);
-            
-            // Сәтті тіркелген соң форманы бастапқы қалпына келтіру
+            showMessage(`Қош келдіңіз, ${username}! Стадион ашылуда…`);
+            submitButton.disabled = true;
+
+            sessionStorage.setItem('almas_stadium_access', JSON.stringify({
+                username,
+                registeredAt: Date.now()
+            }));
+
             setTimeout(() => {
-                usernameInput.value = '';
-                passwordInput.value = '';
-                confirmPasswordInput.value = '';
-                passwordToggles.forEach((toggle) => setPasswordVisibility(toggle, false));
-                fileInput.value = '';
-                fileLabel.textContent = 'Файлды таңдау';
-                fileLabel.classList.remove('text-white', 'font-medium');
-                dropzone.classList.remove('border-white/50', 'bg-white/10');
-                
-                dropContainer.classList.remove('fully-expanded');
-                authFields.classList.remove('visible-fields');
-                authFields.classList.add('hidden-fields');
-                
-                usernameInput.disabled = true;
-                passwordInput.disabled = true;
-                confirmPasswordInput.disabled = true;
-                validateForm();
-            }, 3500);
+                window.location.href = './stadium.html';
+            }, 900);
         }
     </script>
 </body>
