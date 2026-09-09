@@ -202,12 +202,121 @@
         }
 
         #auth-fields.visible-fields {
-            max-height: 340px;
+            max-height: 500px;
         }
 
         #file-label {
             max-width: 100%;
             overflow-wrap: anywhere;
+        }
+
+        .left-panel {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .validation-rules {
+            display: none;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.025);
+        }
+
+        #drop-container.fully-expanded .validation-rules {
+            display: grid;
+        }
+
+        .rules-title {
+            margin: 0 0 5px;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .rule-list {
+            display: grid;
+            gap: 3px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .rule {
+            display: flex;
+            gap: 5px;
+            align-items: flex-start;
+            color: #7d8492;
+            font-size: 10px;
+            line-height: 1.25;
+            transition: color 0.25s ease;
+        }
+
+        .rule::before {
+            flex: 0 0 auto;
+            content: '×';
+            color: #f87171;
+            font-weight: 700;
+        }
+
+        .rule.valid {
+            color: #d1fae5;
+        }
+
+        .rule.valid::before {
+            content: '✓';
+            color: #34d399;
+        }
+
+        .field-error {
+            min-height: 13px;
+            margin: 4px 0 0;
+            color: #f87171;
+            font-size: 10px;
+            line-height: 1.2;
+        }
+
+        .glass-input.input-valid {
+            border-color: rgba(52, 211, 153, 0.65);
+        }
+
+        .glass-input.input-invalid {
+            border-color: rgba(248, 113, 113, 0.75);
+        }
+
+        .password-meter {
+            height: 4px;
+            margin-top: 6px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .password-meter-fill {
+            width: 0;
+            height: 100%;
+            border-radius: inherit;
+            background: #f87171;
+            transition: width 0.25s ease, background 0.25s ease;
+        }
+
+        .password-strength {
+            margin: 3px 0 0;
+            color: #7d8492;
+            font-size: 9px;
+            text-align: right;
+        }
+
+        .glass-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.42;
+            transform: none;
         }
 
         /* Қолданба көлденең ашылғанда барлық өрісті бір экранға сыйғызу */
@@ -219,7 +328,7 @@
 
             #drop-container.fully-expanded {
                 width: min(96vw, 760px);
-                height: min(90dvh, 350px);
+                height: min(90dvh, 440px);
             }
 
             #drop-container.fully-expanded #form-content {
@@ -250,6 +359,10 @@
                 padding: clamp(10px, 2.5vh, 20px) !important;
             }
 
+            #drop-container.fully-expanded .left-panel {
+                align-self: center;
+            }
+
             #drop-container.fully-expanded #auth-fields {
                 width: 100%;
                 min-width: 0;
@@ -258,6 +371,10 @@
                 justify-content: center;
                 margin-top: 0 !important;
                 overflow: visible;
+            }
+
+            #drop-container.fully-expanded #auth-fields .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 10px !important;
             }
 
             #drop-container.fully-expanded #form-content > .mt-auto {
@@ -279,6 +396,19 @@
 
             #drop-container.fully-expanded .form-main {
                 gap: 14px;
+            }
+
+            #drop-container.fully-expanded .left-panel {
+                gap: 6px;
+            }
+
+            #drop-container.fully-expanded .validation-rules {
+                gap: 7px;
+                padding: 7px 9px;
+            }
+
+            #drop-container.fully-expanded .rule {
+                font-size: 9px;
             }
 
             #drop-container.fully-expanded #form-content h1 {
@@ -323,30 +453,62 @@
             </div>
 
             <div class="form-main">
-                <!-- Файл жүктеу аймағы -->
-                <div id="dropzone" class="border border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer transition-all duration-300 hover:border-white/50 hover:bg-white/5" onclick="document.getElementById('file-upload').click()">
-                    <div class="mb-2 flex justify-center">
-                        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                        </svg>
+                <div class="left-panel">
+                    <!-- Файл жүктеу аймағы -->
+                    <div id="dropzone" class="border border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer transition-all duration-300 hover:border-white/50 hover:bg-white/5" onclick="document.getElementById('file-upload').click()">
+                        <div class="mb-2 flex justify-center">
+                            <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                        </div>
+                        <p class="text-[13px] text-gray-300 font-medium" id="file-label">Файлды таңдау</p>
+                        <input type="file" id="file-upload" class="hidden" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt" required>
                     </div>
-                    <p class="text-[13px] text-gray-300 font-medium" id="file-label">Файлды таңдау</p>
-                    <input type="file" id="file-upload" class="hidden" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt" required>
+
+                    <div id="validation-rules" class="validation-rules" aria-live="polite">
+                        <div>
+                            <p class="rules-title">Ойыншы аты</p>
+                            <ul class="rule-list">
+                                <li class="rule" id="rule-name-length">3–16 таңба</li>
+                                <li class="rule" id="rule-name-start">Әріптен басталсын</li>
+                                <li class="rule" id="rule-name-chars">Тек әріп, сан және _</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <p class="rules-title">Құпиясөз</p>
+                            <ul class="rule-list">
+                                <li class="rule" id="rule-pass-length">8–32 таңба</li>
+                                <li class="rule" id="rule-pass-case">Үлкен және кіші әріп</li>
+                                <li class="rule" id="rule-pass-number">Кемінде 1 сан</li>
+                                <li class="rule" id="rule-pass-special">Кемінде 1 арнайы белгі</li>
+                                <li class="rule" id="rule-pass-space">Бос орын болмасын</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="auth-fields" class="hidden-fields flex-1 flex flex-col justify-end mt-4">
                     <div class="space-y-4">
                         <div class="space-y-1.5">
                             <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Ойыншы аты</label>
-                            <input type="text" id="username" placeholder="Мысалы: ProGamer" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                            <input type="text" id="username" name="username" minlength="3" maxlength="16" autocomplete="username" placeholder="Мысалы: ProGamer" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                            <p class="field-error" id="username-error"></p>
                         </div>
 
                         <div class="space-y-1.5">
                             <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Құпия сөз</label>
-                            <input type="password" id="password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                            <input type="password" id="password" name="password" minlength="8" maxlength="32" autocomplete="new-password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                            <div class="password-meter"><div class="password-meter-fill" id="password-meter-fill"></div></div>
+                            <p class="password-strength" id="password-strength">Құпиясөз күші: —</p>
                         </div>
 
-                        <button type="button" onclick="submitForm()" class="glass-button w-full font-medium py-3 px-4 rounded-lg text-sm tracking-wide mt-2">
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Құпия сөзді қайталау</label>
+                            <input type="password" id="confirm-password" name="confirm-password" minlength="8" maxlength="32" autocomplete="new-password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                            <p class="field-error" id="confirm-error"></p>
+                        </div>
+
+                        <button type="button" id="submit-button" onclick="submitForm()" class="glass-button w-full font-medium py-3 px-4 rounded-lg text-sm tracking-wide mt-2" disabled>
                             Тіркелуді аяқтау
                         </button>
                     </div>
@@ -382,9 +544,98 @@
         const authFields = document.getElementById('auth-fields');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        const usernameError = document.getElementById('username-error');
+        const confirmError = document.getElementById('confirm-error');
+        const passwordMeterFill = document.getElementById('password-meter-fill');
+        const passwordStrength = document.getElementById('password-strength');
+        const submitButton = document.getElementById('submit-button');
         
         const messageBox = document.getElementById('message-box');
         const messageText = document.getElementById('message-text');
+
+        const nameStartPattern = /^[A-Za-zА-Яа-яЁёӘәІіҢңҒғҮүҰұҚқӨөҺһ]/;
+        const nameAllowedPattern = /^[A-Za-zА-Яа-яЁёӘәІіҢңҒғҮүҰұҚқӨөҺһ0-9_]+$/;
+        const upperCasePattern = /[A-ZА-ЯЁӘІҢҒҮҰҚӨҺ]/;
+        const lowerCasePattern = /[a-zа-яёәіңғүұқөһ]/;
+        const specialPattern = /[!@#$%^&*._-]/;
+
+        function setRuleState(id, isValid) {
+            document.getElementById(id).classList.toggle('valid', isValid);
+        }
+
+        function setInputState(input, isValid, hasValue) {
+            input.classList.toggle('input-valid', hasValue && isValid);
+            input.classList.toggle('input-invalid', hasValue && !isValid);
+        }
+
+        function validateForm() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            const confirmation = confirmPasswordInput.value;
+
+            const nameChecks = {
+                length: username.length >= 3 && username.length <= 16,
+                start: nameStartPattern.test(username),
+                chars: nameAllowedPattern.test(username)
+            };
+
+            const passwordChecks = {
+                length: password.length >= 8 && password.length <= 32,
+                letterCase: upperCasePattern.test(password) && lowerCasePattern.test(password),
+                number: /[0-9]/.test(password),
+                special: specialPattern.test(password),
+                noSpace: password.length > 0 && !/\s/.test(password)
+            };
+
+            setRuleState('rule-name-length', nameChecks.length);
+            setRuleState('rule-name-start', nameChecks.start);
+            setRuleState('rule-name-chars', nameChecks.chars);
+            setRuleState('rule-pass-length', passwordChecks.length);
+            setRuleState('rule-pass-case', passwordChecks.letterCase);
+            setRuleState('rule-pass-number', passwordChecks.number);
+            setRuleState('rule-pass-special', passwordChecks.special);
+            setRuleState('rule-pass-space', passwordChecks.noSpace);
+
+            const usernameValid = Object.values(nameChecks).every(Boolean);
+            const passwordValid = Object.values(passwordChecks).every(Boolean);
+            const confirmationValid = confirmation.length > 0 && confirmation === password;
+
+            usernameError.textContent = username.length > 0 && !usernameValid
+                ? 'Ат ережелерге сәйкес емес'
+                : '';
+            confirmError.textContent = confirmation.length > 0 && !confirmationValid
+                ? 'Құпиясөздер бірдей емес'
+                : '';
+
+            setInputState(usernameInput, usernameValid, username.length > 0);
+            setInputState(passwordInput, passwordValid, password.length > 0);
+            setInputState(confirmPasswordInput, confirmationValid, confirmation.length > 0);
+
+            const passedPasswordRules = Object.values(passwordChecks).filter(Boolean).length;
+            const strengthPercent = Math.round((passedPasswordRules / 5) * 100);
+            passwordMeterFill.style.width = `${strengthPercent}%`;
+
+            if (password.length === 0) {
+                passwordMeterFill.style.background = '#f87171';
+                passwordStrength.textContent = 'Құпиясөз күші: —';
+            } else if (passedPasswordRules <= 2) {
+                passwordMeterFill.style.background = '#f87171';
+                passwordStrength.textContent = 'Құпиясөз күші: әлсіз';
+            } else if (passedPasswordRules <= 4) {
+                passwordMeterFill.style.background = '#fbbf24';
+                passwordStrength.textContent = 'Құпиясөз күші: орташа';
+            } else {
+                passwordMeterFill.style.background = '#34d399';
+                passwordStrength.textContent = 'Құпиясөз күші: мықты';
+            }
+
+            const fileSelected = fileInput.files && fileInput.files.length > 0;
+            const formValid = fileSelected && usernameValid && passwordValid && confirmationValid;
+            submitButton.disabled = !formValid;
+
+            return { fileSelected, usernameValid, passwordValid, confirmationValid, formValid };
+        }
 
         // Бет жүктелгенде орындалатын тамшы анимациясы
         window.onload = () => {
@@ -424,8 +675,14 @@
                 // Өрістерді қолжетімді ету
                 usernameInput.disabled = false;
                 passwordInput.disabled = false;
+                confirmPasswordInput.disabled = false;
+                validateForm();
             }
         });
+
+        usernameInput.addEventListener('input', validateForm);
+        passwordInput.addEventListener('input', validateForm);
+        confirmPasswordInput.addEventListener('input', validateForm);
 
         // Файлды сүйреп әкелу (Drag & Drop) мүмкіндігі
         dropzone.addEventListener('dragover', (e) => {
@@ -461,19 +718,25 @@
         // Тіркелуді аяқтау батырмасы
         function submitForm() {
             const username = usernameInput.value.trim();
-            const password = passwordInput.value.trim();
+            const validation = validateForm();
 
-            if(!username || !password) {
-                showMessage('Барлық өрістерді толтырыңыз!');
+            if (!validation.fileSelected) {
+                showMessage('Алдымен файлды таңдаңыз!');
                 return;
             }
 
-            showMessage(`Сәтті! Қош келдіңіз, ${username}!`);
+            if (!validation.formValid) {
+                showMessage('Барлық шарттарды орындаңыз!');
+                return;
+            }
+
+            showMessage(`Деректер талаптарға сай. Қош келдіңіз, ${username}!`);
             
             // Сәтті тіркелген соң форманы бастапқы қалпына келтіру
             setTimeout(() => {
                 usernameInput.value = '';
                 passwordInput.value = '';
+                confirmPasswordInput.value = '';
                 fileInput.value = '';
                 fileLabel.textContent = 'Файлды таңдау';
                 fileLabel.classList.remove('text-white', 'font-medium');
@@ -485,6 +748,8 @@
                 
                 usernameInput.disabled = true;
                 passwordInput.disabled = true;
+                confirmPasswordInput.disabled = true;
+                validateForm();
             }, 3500);
         }
     </script>
