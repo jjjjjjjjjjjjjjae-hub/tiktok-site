@@ -187,6 +187,29 @@
             pointer-events: auto;
         }
 
+        .form-main {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            flex-direction: column;
+        }
+
+        #auth-fields.hidden-fields {
+            flex: 0 0 auto;
+            max-height: 0;
+            margin-top: 0 !important;
+            overflow: hidden;
+        }
+
+        #auth-fields.visible-fields {
+            max-height: 340px;
+        }
+
+        #file-label {
+            max-width: 100%;
+            overflow-wrap: anywhere;
+        }
+
         /* Қолданба көлденең ашылғанда барлық өрісті бір экранға сыйғызу */
         @media (orientation: landscape) {
             #drop-container.expanded {
@@ -196,42 +219,49 @@
 
             #drop-container.fully-expanded {
                 width: min(96vw, 760px);
-                height: min(90dvh, 360px);
+                height: min(90dvh, 350px);
             }
 
             #drop-container.fully-expanded #form-content {
-                display: grid;
-                grid-template-columns: minmax(150px, 0.8fr) minmax(260px, 1.4fr);
-                grid-template-rows: auto 1fr auto;
-                gap: clamp(6px, 1.4vh, 12px) clamp(12px, 2vw, 22px);
-                align-items: center;
+                display: flex;
+                flex-direction: column;
+                gap: clamp(5px, 1.2vh, 10px);
                 padding: clamp(10px, 3vh, 18px) clamp(16px, 3vw, 28px);
                 overflow: hidden;
             }
 
             #drop-container.fully-expanded #form-content > .text-center {
-                grid-column: 1 / -1;
-                grid-row: 1;
+                flex: 0 0 auto;
                 margin-bottom: 0 !important;
             }
 
+            #drop-container.fully-expanded .form-main {
+                display: grid;
+                flex: 1 1 auto;
+                min-height: 0;
+                grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+                gap: clamp(12px, 2.5vw, 24px);
+                align-items: center;
+            }
+
             #drop-container.fully-expanded #dropzone {
-                grid-column: 1;
-                grid-row: 2;
+                width: 100%;
+                min-width: 0;
                 padding: clamp(10px, 2.5vh, 20px) !important;
             }
 
             #drop-container.fully-expanded #auth-fields {
-                grid-column: 2;
-                grid-row: 2;
-                align-self: stretch;
+                width: 100%;
+                min-width: 0;
+                max-height: none;
+                align-self: center;
                 justify-content: center;
                 margin-top: 0 !important;
+                overflow: visible;
             }
 
             #drop-container.fully-expanded #form-content > .mt-auto {
-                grid-column: 1 / -1;
-                grid-row: 3;
+                flex: 0 0 auto;
                 margin-top: 0 !important;
                 padding-top: 0 !important;
             }
@@ -243,8 +273,12 @@
             }
 
             #drop-container.fully-expanded #form-content {
-                gap: 4px 14px;
+                gap: 4px;
                 padding: 8px 18px;
+            }
+
+            #drop-container.fully-expanded .form-main {
+                gap: 14px;
             }
 
             #drop-container.fully-expanded #form-content h1 {
@@ -288,32 +322,34 @@
                 </p>
             </div>
 
-            <!-- Файл жүктеу аймағы -->
-            <div id="dropzone" class="border border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer transition-all duration-300 hover:border-white/50 hover:bg-white/5" onclick="document.getElementById('file-upload').click()">
-                <div class="mb-2 flex justify-center">
-                    <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
+            <div class="form-main">
+                <!-- Файл жүктеу аймағы -->
+                <div id="dropzone" class="border border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer transition-all duration-300 hover:border-white/50 hover:bg-white/5" onclick="document.getElementById('file-upload').click()">
+                    <div class="mb-2 flex justify-center">
+                        <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                    </div>
+                    <p class="text-[13px] text-gray-300 font-medium" id="file-label">Файлды таңдау</p>
+                    <input type="file" id="file-upload" class="hidden" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt" required>
                 </div>
-                <p class="text-[13px] text-gray-300 font-medium" id="file-label">Файлды таңдау</p>
-                <input type="file" id="file-upload" class="hidden" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt" required>
-            </div>
 
-            <div id="auth-fields" class="hidden-fields flex-1 flex flex-col justify-end mt-4">
-                <div class="space-y-4">
-                    <div class="space-y-1.5">
-                        <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Ойыншы аты</label>
-                        <input type="text" id="username" placeholder="Мысалы: ProGamer" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                <div id="auth-fields" class="hidden-fields flex-1 flex flex-col justify-end mt-4">
+                    <div class="space-y-4">
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Ойыншы аты</label>
+                            <input type="text" id="username" placeholder="Мысалы: ProGamer" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Құпия сөз</label>
+                            <input type="password" id="password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                        </div>
+
+                        <button type="button" onclick="submitForm()" class="glass-button w-full font-medium py-3 px-4 rounded-lg text-sm tracking-wide mt-2">
+                            Тіркелуді аяқтау
+                        </button>
                     </div>
-
-                    <div class="space-y-1.5">
-                        <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Құпия сөз</label>
-                        <input type="password" id="password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
-                    </div>
-
-                    <button type="button" onclick="submitForm()" class="glass-button w-full font-medium py-3 px-4 rounded-lg text-sm tracking-wide mt-2">
-                        Тіркелуді аяқтау
-                    </button>
                 </div>
             </div>
 
