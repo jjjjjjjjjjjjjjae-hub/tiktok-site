@@ -8,6 +8,12 @@ on:
     paths:
       - "android-app/**"
       - ".github/workflows/build-almas-projekt.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "android-app/**"
+      - ".github/workflows/build-almas-projekt.yml"
 
 permissions:
   contents: read
