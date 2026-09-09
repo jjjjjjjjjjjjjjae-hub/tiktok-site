@@ -156,6 +156,54 @@
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
         }
 
+        .password-input-wrap {
+            position: relative;
+        }
+
+        .password-input-wrap .glass-input {
+            padding-right: 48px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 7px;
+            display: grid;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            place-items: center;
+            transform: translateY(-50%);
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: #8b93a3;
+            cursor: pointer;
+            transition: color 0.2s ease, background 0.2s ease;
+        }
+
+        .password-toggle:hover,
+        .password-toggle:focus-visible {
+            outline: none;
+            color: white;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .password-toggle svg {
+            width: 18px;
+            height: 18px;
+            pointer-events: none;
+        }
+
+        .password-toggle .eye-off-icon,
+        .password-toggle[aria-pressed="true"] .eye-icon {
+            display: none;
+        }
+
+        .password-toggle[aria-pressed="true"] .eye-off-icon {
+            display: block;
+        }
+
         /* Мөлдір батырма */
         .glass-button {
             background: rgba(255, 255, 255, 0.1);
@@ -313,6 +361,24 @@
             text-align: right;
         }
 
+        .auth-stack {
+            display: grid;
+            gap: 10px;
+        }
+
+        .auth-field {
+            display: grid;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        #submit-button {
+            width: 100%;
+            min-height: 42px;
+            margin-top: 0 !important;
+            flex-shrink: 0;
+        }
+
         .glass-button:disabled {
             cursor: not-allowed;
             opacity: 0.42;
@@ -327,8 +393,8 @@
             }
 
             #drop-container.fully-expanded {
-                width: min(96vw, 760px);
-                height: min(90dvh, 440px);
+                width: min(96vw, 820px);
+                height: min(94dvh, 500px);
             }
 
             #drop-container.fully-expanded #form-content {
@@ -373,8 +439,18 @@
                 overflow: visible;
             }
 
-            #drop-container.fully-expanded #auth-fields .space-y-4 > :not([hidden]) ~ :not([hidden]) {
-                margin-top: 10px !important;
+            #drop-container.fully-expanded #auth-fields .auth-stack {
+                gap: clamp(5px, 1.2vh, 9px);
+            }
+
+            #drop-container.fully-expanded #auth-fields .auth-field {
+                gap: 3px;
+            }
+
+            #drop-container.fully-expanded .glass-input,
+            #drop-container.fully-expanded .glass-button {
+                padding-top: 9px !important;
+                padding-bottom: 9px !important;
             }
 
             #drop-container.fully-expanded #form-content > .mt-auto {
@@ -384,49 +460,91 @@
             }
         }
 
-        @media (orientation: landscape) and (max-height: 380px) {
+        @media (orientation: landscape) and (max-height: 460px) {
             #drop-container.fully-expanded {
-                height: calc(100dvh - 12px);
+                height: calc(100dvh - 8px);
             }
 
             #drop-container.fully-expanded #form-content {
-                gap: 4px;
-                padding: 8px 18px;
+                gap: 3px;
+                padding: 6px 14px;
             }
 
             #drop-container.fully-expanded .form-main {
-                gap: 14px;
+                gap: 12px;
             }
 
             #drop-container.fully-expanded .left-panel {
-                gap: 6px;
+                gap: 5px;
             }
 
             #drop-container.fully-expanded .validation-rules {
-                gap: 7px;
-                padding: 7px 9px;
+                gap: 6px;
+                padding: 6px 8px;
             }
 
             #drop-container.fully-expanded .rule {
-                font-size: 9px;
+                font-size: 8.5px;
             }
 
             #drop-container.fully-expanded #form-content h1 {
                 font-size: 1rem;
             }
 
-            #drop-container.fully-expanded #form-content p {
+            #drop-container.fully-expanded #form-content > .text-center p {
                 margin-top: 2px;
+                font-size: 10px;
             }
 
-            #drop-container.fully-expanded #auth-fields .space-y-4 > :not([hidden]) ~ :not([hidden]) {
-                margin-top: 6px !important;
+            #drop-container.fully-expanded #auth-fields .auth-stack {
+                gap: 4px;
+            }
+
+            #drop-container.fully-expanded #auth-fields .auth-field {
+                gap: 2px;
+            }
+
+            #drop-container.fully-expanded #auth-fields label {
+                font-size: 9px;
             }
 
             #drop-container.fully-expanded .glass-input,
             #drop-container.fully-expanded .glass-button {
-                padding-top: 8px !important;
-                padding-bottom: 8px !important;
+                min-height: 32px;
+                padding-top: 6px !important;
+                padding-bottom: 6px !important;
+            }
+
+            #drop-container.fully-expanded .password-toggle {
+                right: 5px;
+                width: 30px;
+                height: 30px;
+            }
+
+            #drop-container.fully-expanded .field-error {
+                min-height: 9px;
+                margin-top: 0;
+                font-size: 8.5px;
+            }
+
+            #drop-container.fully-expanded .password-meter {
+                height: 3px;
+                margin-top: 2px;
+            }
+
+            #drop-container.fully-expanded .password-strength {
+                margin-top: 1px;
+                font-size: 8px;
+                line-height: 1;
+            }
+
+            #drop-container.fully-expanded #submit-button {
+                min-height: 32px;
+                font-size: 12px;
+            }
+
+            #drop-container.fully-expanded #form-content > .mt-auto p {
+                font-size: 8px;
             }
         }
     </style>
@@ -488,23 +606,45 @@
                 </div>
 
                 <div id="auth-fields" class="hidden-fields flex-1 flex flex-col justify-end mt-4">
-                    <div class="space-y-4">
-                        <div class="space-y-1.5">
+                    <div class="auth-stack">
+                        <div class="auth-field">
                             <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Ойыншы аты</label>
                             <input type="text" id="username" name="username" minlength="3" maxlength="16" autocomplete="username" placeholder="Мысалы: ProGamer" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
                             <p class="field-error" id="username-error"></p>
                         </div>
 
-                        <div class="space-y-1.5">
+                        <div class="auth-field">
                             <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Құпия сөз</label>
-                            <input type="password" id="password" name="password" minlength="8" maxlength="32" autocomplete="new-password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                            <div class="password-input-wrap">
+                                <input type="password" id="password" name="password" minlength="8" maxlength="32" autocomplete="new-password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                                <button type="button" class="password-toggle" data-target="password" aria-label="Құпиясөзді көрсету" aria-pressed="false" title="Құпиясөзді көрсету">
+                                    <svg class="eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                                        <circle cx="12" cy="12" r="2.75" stroke-width="1.7"></circle>
+                                    </svg>
+                                    <svg class="eye-off-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="m3 3 18 18M10.6 6.15A9.8 9.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.15 2.8M6.3 6.35C3.85 8.2 2.5 12 2.5 12s3.5 6 9.5 6a9.6 9.6 0 0 0 3.15-.52M9.9 9.9A2.75 2.75 0 0 0 13.95 14"></path>
+                                    </svg>
+                                </button>
+                            </div>
                             <div class="password-meter"><div class="password-meter-fill" id="password-meter-fill"></div></div>
                             <p class="password-strength" id="password-strength">Құпиясөз күші: —</p>
                         </div>
 
-                        <div class="space-y-1.5">
+                        <div class="auth-field">
                             <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Құпия сөзді қайталау</label>
-                            <input type="password" id="confirm-password" name="confirm-password" minlength="8" maxlength="32" autocomplete="new-password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                            <div class="password-input-wrap">
+                                <input type="password" id="confirm-password" name="confirm-password" minlength="8" maxlength="32" autocomplete="new-password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
+                                <button type="button" class="password-toggle" data-target="confirm-password" aria-label="Құпиясөзді көрсету" aria-pressed="false" title="Құпиясөзді көрсету">
+                                    <svg class="eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                                        <circle cx="12" cy="12" r="2.75" stroke-width="1.7"></circle>
+                                    </svg>
+                                    <svg class="eye-off-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="m3 3 18 18M10.6 6.15A9.8 9.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.15 2.8M6.3 6.35C3.85 8.2 2.5 12 2.5 12s3.5 6 9.5 6a9.6 9.6 0 0 0 3.15-.52M9.9 9.9A2.75 2.75 0 0 0 13.95 14"></path>
+                                    </svg>
+                                </button>
+                            </div>
                             <p class="field-error" id="confirm-error"></p>
                         </div>
 
@@ -550,6 +690,7 @@
         const passwordMeterFill = document.getElementById('password-meter-fill');
         const passwordStrength = document.getElementById('password-strength');
         const submitButton = document.getElementById('submit-button');
+        const passwordToggles = document.querySelectorAll('.password-toggle');
         
         const messageBox = document.getElementById('message-box');
         const messageText = document.getElementById('message-text');
@@ -684,6 +825,24 @@
         passwordInput.addEventListener('input', validateForm);
         confirmPasswordInput.addEventListener('input', validateForm);
 
+        function setPasswordVisibility(toggle, visible) {
+            const input = document.getElementById(toggle.dataset.target);
+            const label = visible ? 'Құпиясөзді жасыру' : 'Құпиясөзді көрсету';
+
+            input.type = visible ? 'text' : 'password';
+            toggle.setAttribute('aria-pressed', String(visible));
+            toggle.setAttribute('aria-label', label);
+            toggle.title = label;
+        }
+
+        passwordToggles.forEach((toggle) => {
+            toggle.addEventListener('click', () => {
+                const isVisible = toggle.getAttribute('aria-pressed') === 'true';
+                setPasswordVisibility(toggle, !isVisible);
+                document.getElementById(toggle.dataset.target).focus();
+            });
+        });
+
         // Файлды сүйреп әкелу (Drag & Drop) мүмкіндігі
         dropzone.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -737,6 +896,7 @@
                 usernameInput.value = '';
                 passwordInput.value = '';
                 confirmPasswordInput.value = '';
+                passwordToggles.forEach((toggle) => setPasswordVisibility(toggle, false));
                 fileInput.value = '';
                 fileLabel.textContent = 'Файлды таңдау';
                 fileLabel.classList.remove('text-white', 'font-medium');
