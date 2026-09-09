@@ -1,0 +1,56 @@
+name: Build almas projekt APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "android-app/**"
+      - ".github/workflows/build-almas-projekt.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 35 SDK
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Build APK
+        run: gradle --no-daemon --stacktrace -p android-app :app:assembleDebug
+
+      - name: Prepare APK
+        run: |
+          mkdir -p "$RUNNER_TEMP/almas-projekt"
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/almas-projekt/almas-projekt.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: almas-projekt-apk
+          path: ${{ runner.temp }}/almas-projekt/almas-projekt.apk
+          if-no-files-found: error
+          retention-days: 30
