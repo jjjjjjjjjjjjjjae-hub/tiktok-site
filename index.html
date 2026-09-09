@@ -13,12 +13,20 @@
             box-sizing: border-box;
         }
 
+        html {
+            width: 100%;
+            height: 100%;
+            background-color: #050505;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #050505; /* Өте қараңғы фон */
             overflow: hidden;
             margin: 0;
             height: 100vh;
+            height: 100dvh;
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -99,12 +107,13 @@
         #drop-container.expanded {
             width: min(92vw, 380px);
             height: 280px; /* Бастапқы биіктігі (тек файл жүктеу) */
+            max-height: calc(100dvh - 20px);
             border-radius: 24px;
         }
 
         /* 3-қадам: Файл жүктелгеннен кейінгі толық ашылуы */
         #drop-container.fully-expanded {
-            height: 480px;
+            height: min(480px, calc(100dvh - 20px));
         }
 
         #form-content {
@@ -117,6 +126,13 @@
             transform: scale(0.95);
             transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
             pointer-events: none;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: none;
+        }
+
+        #form-content::-webkit-scrollbar {
+            display: none;
         }
 
         #form-content.visible {
@@ -169,6 +185,85 @@
         .visible-fields {
             opacity: 1;
             pointer-events: auto;
+        }
+
+        /* Қолданба көлденең ашылғанда барлық өрісті бір экранға сыйғызу */
+        @media (orientation: landscape) and (max-height: 600px) {
+            #drop-container.expanded {
+                width: min(92vw, 540px);
+                height: min(74dvh, 250px);
+            }
+
+            #drop-container.fully-expanded {
+                width: min(96vw, 760px);
+                height: min(90dvh, 360px);
+            }
+
+            #drop-container.fully-expanded #form-content {
+                display: grid;
+                grid-template-columns: minmax(150px, 0.8fr) minmax(260px, 1.4fr);
+                grid-template-rows: auto 1fr auto;
+                gap: clamp(6px, 1.4vh, 12px) clamp(12px, 2vw, 22px);
+                align-items: center;
+                padding: clamp(10px, 3vh, 18px) clamp(16px, 3vw, 28px);
+                overflow: hidden;
+            }
+
+            #drop-container.fully-expanded #form-content > .text-center {
+                grid-column: 1 / -1;
+                grid-row: 1;
+                margin-bottom: 0 !important;
+            }
+
+            #drop-container.fully-expanded #dropzone {
+                grid-column: 1;
+                grid-row: 2;
+                padding: clamp(10px, 2.5vh, 20px) !important;
+            }
+
+            #drop-container.fully-expanded #auth-fields {
+                grid-column: 2;
+                grid-row: 2;
+                align-self: stretch;
+                justify-content: center;
+                margin-top: 0 !important;
+            }
+
+            #drop-container.fully-expanded #form-content > .mt-auto {
+                grid-column: 1 / -1;
+                grid-row: 3;
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 380px) {
+            #drop-container.fully-expanded {
+                height: calc(100dvh - 12px);
+            }
+
+            #drop-container.fully-expanded #form-content {
+                gap: 4px 14px;
+                padding: 8px 18px;
+            }
+
+            #drop-container.fully-expanded #form-content h1 {
+                font-size: 1rem;
+            }
+
+            #drop-container.fully-expanded #form-content p {
+                margin-top: 2px;
+            }
+
+            #drop-container.fully-expanded #auth-fields .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 6px !important;
+            }
+
+            #drop-container.fully-expanded .glass-input,
+            #drop-container.fully-expanded .glass-button {
+                padding-top: 8px !important;
+                padding-bottom: 8px !important;
+            }
         }
     </style>
 </head>
@@ -279,7 +374,8 @@
             
             if (fileName) {
                 // Файл атын шығару
-                fileLabel.innerHTML = `<span class="text-white font-medium">${fileName}</span>`;
+                fileLabel.textContent = fileName;
+                fileLabel.classList.add('text-white', 'font-medium');
                 dropzone.classList.add('border-white/50', 'bg-white/10');
                 
                 // Айна контейнерін төмен қарай ұзарту
@@ -344,364 +440,7 @@
                 passwordInput.value = '';
                 fileInput.value = '';
                 fileLabel.textContent = 'Файлды таңдау';
-                dropzone.classList.remove('border-white/50', 'bg-white/10');
-                
-                dropContainer.classList.remove('fully-expanded');
-                authFields.classList.remove('visible-fields');
-                authFields.classList.add('hidden-fields');
-                
-                usernameInput.disabled = true;
-                passwordInput.disabled = true;
-            }, 3500);
-        }
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="kk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ойынға тіркелу | almas offical</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <style>
-        * {
-            user-select: none;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #050505; /* Өте қараңғы фон */
-            overflow: hidden;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Артқы бұлыңғыр жарықтар (айнадан көрінуі үшін) */
-        .bg-shapes {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-            z-index: 0;
-        }
-        
-        .shape-1 {
-            position: absolute;
-            top: -10%;
-            left: -10%;
-            width: 50vw;
-            height: 50vw;
-            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
-            border-radius: 50%;
-            filter: blur(60px);
-        }
-
-        .shape-2 {
-            position: absolute;
-            bottom: -20%;
-            right: -10%;
-            width: 60vw;
-            height: 60vw;
-            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
-            border-radius: 50%;
-            filter: blur(80px);
-        }
-
-        /* Тамшы және айна контейнері */
-        #drop-container {
-            position: fixed;
-            top: -100px; /* Бастапқы орны жоғарыда жасырылған */
-            left: 50%;
-            transform: translate(-50%, -50%);
-            
-            /* Тамшы өлшемдері */
-            width: 20px;
-            height: 20px;
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            
-            /* Айна (Glassmorphism) стилі */
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(30px) saturate(150%);
-            -webkit-backdrop-filter: blur(30px) saturate(150%);
-            border-top: 1px solid rgba(255, 255, 255, 0.4);
-            border-left: 1px solid rgba(255, 255, 255, 0.2);
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 
-                0 25px 50px -12px rgba(0, 0, 0, 0.8),
-                inset 0 0 20px rgba(255, 255, 255, 0.05);
-            
-            z-index: 10;
-            overflow: hidden;
-            
-            /* Анимация өткелдері */
-            transition: 
-                top 0.7s cubic-bezier(0.5, 0, 0.2, 1),
-                width 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                border-radius 0.6s ease;
-        }
-
-        /* 1-қадам: Тамшының құлауы */
-        #drop-container.fallen {
-            top: 50%;
-            border-radius: 50%;
-        }
-
-        /* 2-қадам: Тамшының тіркелу бетіне айналуы */
-        #drop-container.expanded {
-            width: min(92vw, 380px);
-            height: 280px; /* Бастапқы биіктігі (тек файл жүктеу) */
-            border-radius: 24px;
-        }
-
-        /* 3-қадам: Файл жүктелгеннен кейінгі толық ашылуы */
-        #drop-container.fully-expanded {
-            height: 480px;
-        }
-
-        #form-content {
-            position: absolute;
-            inset: 0;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            opacity: 0;
-            transform: scale(0.95);
-            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            pointer-events: none;
-        }
-
-        #form-content.visible {
-            opacity: 1;
-            transform: scale(1);
-            pointer-events: auto;
-        }
-
-        /* Мөлдір өрістер */
-        .glass-input {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            transition: all 0.3s ease;
-        }
-
-        .glass-input:focus {
-            outline: none;
-            border-color: rgba(255, 255, 255, 0.4);
-            background: rgba(0, 0, 0, 0.4);
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
-        }
-
-        /* Мөлдір батырма */
-        .glass-button {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .glass-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .glass-button:active {
-            transform: translateY(0);
-        }
-
-        /* Жасырын құпия сөз өрістері үшін */
-        .hidden-fields {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.5s ease 0.3s;
-        }
-        
-        .visible-fields {
-            opacity: 1;
-            pointer-events: auto;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Артқы бұлыңғыр жарықтар -->
-    <div class="bg-shapes">
-        <div class="shape-1"></div>
-        <div class="shape-2"></div>
-    </div>
-
-    <div id="drop-container">
-        
-        <!-- Тіркелу формасының ішкі мазмұны -->
-        <div id="form-content">
-            
-            <!-- Тақырып -->
-            <div class="text-center mb-6">
-                <h1 class="text-xl font-semibold tracking-wider text-white">Ойынға Тіркелу</h1>
-                <p class="text-gray-400 text-xs mt-2 font-light tracking-wide">
-                    Жалғастыру үшін файл жүктеңіз
-                </p>
-            </div>
-
-            <!-- Файл жүктеу аймағы -->
-            <div id="dropzone" class="border border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer transition-all duration-300 hover:border-white/50 hover:bg-white/5" onclick="document.getElementById('file-upload').click()">
-                <div class="mb-2 flex justify-center">
-                    <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
-                </div>
-                <p class="text-[13px] text-gray-300 font-medium" id="file-label">Файлды таңдау</p>
-                <input type="file" id="file-upload" class="hidden" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt" required>
-            </div>
-
-            <div id="auth-fields" class="hidden-fields flex-1 flex flex-col justify-end mt-4">
-                <div class="space-y-4">
-                    <div class="space-y-1.5">
-                        <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Ойыншы аты</label>
-                        <input type="text" id="username" placeholder="Мысалы: ProGamer" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Құпия сөз</label>
-                        <input type="password" id="password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
-                    </div>
-
-                    <button type="button" onclick="submitForm()" class="glass-button w-full font-medium py-3 px-4 rounded-lg text-sm tracking-wide mt-2">
-                        Тіркелуді аяқтау
-                    </button>
-                </div>
-            </div>
-
-            <!-- Авторлық жазу -->
-            <div class="mt-auto pt-6 text-center">
-                <p class="text-[10px] text-gray-500 font-light tracking-widest uppercase">
-                    Created by <span class="text-gray-300 font-medium">almas offical</span>
-                </p>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- Хабарлама терезесі (Alert орнына) -->
-    <div id="message-box" class="fixed top-6 right-6 px-5 py-3 rounded-xl shadow-2xl transform translate-x-full transition-transform duration-500 z-50 flex items-center gap-3" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
-        <div class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-        </div>
-        <span id="message-text" class="text-white text-xs font-medium tracking-wide">Сәтті орындалды!</span>
-    </div>
-
-    <script>
-        const dropContainer = document.getElementById('drop-container');
-        const formContent = document.getElementById('form-content');
-        
-        const fileInput = document.getElementById('file-upload');
-        const fileLabel = document.getElementById('file-label');
-        const dropzone = document.getElementById('dropzone');
-        
-        const authFields = document.getElementById('auth-fields');
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        
-        const messageBox = document.getElementById('message-box');
-        const messageText = document.getElementById('message-text');
-
-        // Бет жүктелгенде орындалатын тамшы анимациясы
-        window.onload = () => {
-            // 1. Тамшы жоғарыдан құлайды
-            setTimeout(() => {
-                dropContainer.classList.add('fallen');
-            }, 100);
-
-            // 2. Тамшы ортаға жеткен соң, тіркелу бетіне дейін жайылады (айналады)
-            setTimeout(() => {
-                dropContainer.classList.add('expanded');
-            }, 800); // құлау уақыты (0.7s) + аздаған кідіріс
-
-            // 3. Айна жайылған соң ішіндегі жазулар пайда болады
-            setTimeout(() => {
-                formContent.classList.add('visible');
-            }, 1400); // жайылу уақыты (0.6s)
-        };
-
-        // Файл жүктеу логикасы
-        fileInput.addEventListener('change', function(e) {
-            const fileName = e.target.files[0]?.name;
-            
-            if (fileName) {
-                // Файл атын шығару
-                fileLabel.innerHTML = `<span class="text-white font-medium">${fileName}</span>`;
-                dropzone.classList.add('border-white/50', 'bg-white/10');
-                
-                // Айна контейнерін төмен қарай ұзарту
-                dropContainer.classList.add('fully-expanded');
-                
-                // Жасырын өрістерді (логин/пароль) көрсету
-                authFields.classList.remove('hidden-fields');
-                authFields.classList.add('visible-fields');
-                
-                // Өрістерді қолжетімді ету
-                usernameInput.disabled = false;
-                passwordInput.disabled = false;
-            }
-        });
-
-        // Файлды сүйреп әкелу (Drag & Drop) мүмкіндігі
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.classList.add('border-white/50', 'bg-white/5');
-        });
-
-        dropzone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            if(!fileInput.files.length) {
-                dropzone.classList.remove('border-white/50', 'bg-white/5');
-            }
-        });
-
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (e.dataTransfer.files.length) {
-                fileInput.files = e.dataTransfer.files;
-                const event = new Event('change');
-                fileInput.dispatchEvent(event);
-            }
-        });
-
-        // Хабарлама көрсету функциясы
-        function showMessage(text) {
-            messageText.textContent = text;
-            messageBox.style.transform = 'translateX(0)';
-            setTimeout(() => {
-                messageBox.style.transform = 'translateX(150%)';
-            }, 3000);
-        }
-
-        // Тіркелуді аяқтау батырмасы
-        function submitForm() {
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value.trim();
-
-            if(!username || !password) {
-                showMessage('Барлық өрістерді толтырыңыз!');
-                return;
-            }
-
-            showMessage(`Сәтті! Қош келдіңіз, ${username}!`);
-            
-            // Сәтті тіркелген соң форманы бастапқы қалпына келтіру
-            setTimeout(() => {
-                usernameInput.value = '';
-                passwordInput.value = '';
-                fileInput.value = '';
-                fileLabel.textContent = 'Файлды таңдау';
+                fileLabel.classList.remove('text-white', 'font-medium');
                 dropzone.classList.remove('border-white/50', 'bg-white/10');
                 
                 dropContainer.classList.remove('fully-expanded');
