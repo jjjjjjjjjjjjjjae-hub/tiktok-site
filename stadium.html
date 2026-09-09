@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#071019">
+  <meta name="theme-color" content="#05090d">
   <title>Modern Stadium | Almas Project</title>
   <style>
     :root {
       color-scheme: dark;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --glass: rgba(7, 16, 25, 0.68);
-      --line: rgba(255,255,255,.14);
-      --text: #f6fbff;
-      --muted: #a9b9c7;
-      --accent: #55e79a;
+      --glass: rgba(5, 12, 18, .72);
+      --line: rgba(255, 255, 255, .14);
+      --accent: #5af0a3;
+      --text: #f4fbff;
+      --muted: #a9b9c5;
     }
 
     * { box-sizing: border-box; }
@@ -23,50 +23,47 @@
       height: 100%;
       margin: 0;
       overflow: hidden;
-      background: #071019;
+      background: #05090d;
       color: var(--text);
+    }
+
+    body {
+      position: relative;
       touch-action: none;
     }
 
-    button, a { font: inherit; }
-
-    #stage {
+    #viewer {
       position: fixed;
       inset: 0;
-      background:
-        radial-gradient(circle at 50% 46%, rgba(27, 101, 77, .17), transparent 34%),
-        linear-gradient(155deg, #0b1822 0%, #05090e 60%, #071019 100%);
-    }
-
-    canvas {
-      display: block;
       width: 100%;
       height: 100%;
-      outline: none;
+      border: 0;
+      background: #05090d;
     }
 
     .glass {
       background: var(--glass);
       border: 1px solid var(--line);
-      box-shadow: 0 12px 40px rgba(0,0,0,.3);
+      box-shadow: 0 12px 40px rgba(0,0,0,.32);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
     }
 
     .topbar {
       position: fixed;
-      z-index: 10;
-      top: max(14px, env(safe-area-inset-top));
-      left: max(14px, env(safe-area-inset-left));
-      right: max(14px, env(safe-area-inset-right));
-      min-height: 52px;
+      z-index: 5;
+      top: max(12px, env(safe-area-inset-top));
+      left: max(12px, env(safe-area-inset-left));
+      right: max(12px, env(safe-area-inset-right));
+      min-height: 50px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding: 9px 10px 9px 16px;
-      border-radius: 18px;
+      gap: 10px;
+      padding: 8px 9px 8px 14px;
+      border-radius: 17px;
       pointer-events: none;
+      transition: opacity .3s ease;
     }
 
     .brand {
@@ -76,87 +73,72 @@
       gap: 10px;
     }
 
-    .brand-mark {
+    .dot {
       width: 9px;
       height: 9px;
       flex: 0 0 auto;
       border-radius: 50%;
       background: var(--accent);
-      box-shadow: 0 0 18px rgba(85, 231, 154, .9);
+      box-shadow: 0 0 18px rgba(90,240,163,.85);
     }
 
-    .brand-copy { min-width: 0; }
-
-    .brand-title {
+    .title {
       margin: 0;
       overflow: hidden;
-      color: #fff;
       font-size: 14px;
-      font-weight: 750;
-      letter-spacing: .08em;
+      font-weight: 780;
+      letter-spacing: .07em;
       text-overflow: ellipsis;
       text-transform: uppercase;
       white-space: nowrap;
     }
 
-    .brand-subtitle {
+    .subtitle {
       margin: 2px 0 0;
       color: var(--muted);
       font-size: 12px;
-      white-space: nowrap;
     }
 
-    .top-actions {
+    .actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       pointer-events: auto;
     }
 
-    .username {
-      max-width: min(34vw, 190px);
+    .player {
+      max-width: min(35vw, 180px);
       overflow: hidden;
       padding: 8px 11px;
-      border: 1px solid rgba(85,231,154,.22);
+      border: 1px solid rgba(90,240,163,.23);
       border-radius: 999px;
-      background: rgba(85,231,154,.08);
-      color: #d9ffeb;
+      background: rgba(90,240,163,.08);
+      color: #d8ffea;
       font-size: 13px;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .icon-button,
-    .quality-button,
-    .retry-button {
-      min-width: 42px;
-      min-height: 42px;
-      border: 1px solid var(--line);
-      border-radius: 13px;
-      background: rgba(255,255,255,.07);
-      color: #fff;
-      cursor: pointer;
-      transition: background .18s ease, border-color .18s ease, transform .18s ease;
-    }
-
-    .icon-button:hover,
-    .quality-button:hover,
-    .retry-button:hover {
-      border-color: rgba(255,255,255,.3);
-      background: rgba(255,255,255,.13);
-    }
-
-    .icon-button:active,
-    .quality-button:active,
-    .retry-button:active { transform: scale(.96); }
-
-    .icon-button {
+    button {
+      width: 40px;
+      height: 40px;
       display: grid;
       place-items: center;
       padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.07);
+      color: #fff;
+      cursor: pointer;
+      transition: transform .15s ease, background .15s ease;
     }
 
-    .icon-button svg {
+    button:active {
+      transform: scale(.95);
+      background: rgba(255,255,255,.14);
+    }
+
+    button svg {
       width: 19px;
       height: 19px;
       fill: none;
@@ -166,52 +148,17 @@
       stroke-width: 1.8;
     }
 
-    .toolbar {
-      position: fixed;
-      z-index: 10;
-      right: max(14px, env(safe-area-inset-right));
-      bottom: max(16px, env(safe-area-inset-bottom));
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px;
-      border-radius: 16px;
-    }
-
-    .quality-button {
-      padding: 0 13px;
-      color: #eaf5fb;
-      font-size: 13px;
-      font-weight: 650;
-    }
-
-    .hint {
-      position: fixed;
-      z-index: 9;
-      bottom: max(17px, env(safe-area-inset-bottom));
-      left: max(14px, env(safe-area-inset-left));
-      max-width: calc(100vw - 265px);
-      margin: 0;
-      padding: 10px 13px;
-      border-radius: 14px;
-      color: #c8d5df;
-      font-size: 13px;
-      line-height: 1.35;
-      pointer-events: none;
-      transition: opacity .5s ease;
-    }
-
     .loading {
       position: fixed;
-      z-index: 20;
+      z-index: 8;
       inset: 0;
       display: grid;
       place-items: center;
       padding: 24px;
       background:
-        radial-gradient(circle at 50% 44%, rgba(38, 130, 92, .2), transparent 28%),
-        rgba(4, 9, 14, .96);
-      transition: opacity .5s ease, visibility .5s ease;
+        radial-gradient(circle at 50% 43%, rgba(38,128,90,.2), transparent 28%),
+        #05090d;
+      transition: opacity .55s ease, visibility .55s ease;
     }
 
     .loading.hidden {
@@ -221,22 +168,22 @@
     }
 
     .loader-card {
-      width: min(410px, 100%);
+      width: min(390px, 100%);
       padding: 25px;
-      border-radius: 24px;
+      border-radius: 23px;
       text-align: center;
     }
 
-    .loader-ring {
+    .ring {
       position: relative;
-      width: 64px;
-      height: 64px;
+      width: 62px;
+      height: 62px;
       margin: 0 auto 18px;
       border: 2px solid rgba(255,255,255,.1);
       border-radius: 50%;
     }
 
-    .loader-ring::before {
+    .ring::before {
       position: absolute;
       inset: -2px;
       border: 2px solid transparent;
@@ -244,7 +191,7 @@
       border-radius: 50%;
       content: "";
       animation: spin .9s linear infinite;
-      filter: drop-shadow(0 0 8px rgba(85,231,154,.6));
+      filter: drop-shadow(0 0 8px rgba(90,240,163,.6));
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -256,132 +203,70 @@
     }
 
     .loader-card p {
-      margin: 8px 0 18px;
+      margin: 8px 0 0;
       color: var(--muted);
       font-size: 14px;
+      line-height: 1.45;
     }
 
-    .progress-track {
-      width: 100%;
-      height: 7px;
-      overflow: hidden;
-      border-radius: 999px;
-      background: rgba(255,255,255,.09);
-    }
-
-    .progress-fill {
-      width: 2%;
-      height: 100%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, #32b978, #7affb7);
-      box-shadow: 0 0 16px rgba(85,231,154,.55);
-      transition: width .2s ease;
-    }
-
-    .progress-meta {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      margin-top: 10px;
-      color: #91a7b6;
-      font-size: 12px;
-    }
-
-    .error-panel {
-      display: none;
-      margin-top: 18px;
-    }
-
-    .loading.error .loader-ring,
-    .loading.error .progress-track,
-    .loading.error .progress-meta { display: none; }
-
-    .loading.error .error-panel { display: block; }
-
-    .retry-button {
-      margin-top: 12px;
-      padding: 0 17px;
-      font-weight: 650;
-    }
-
-    .credit {
+    .fallback {
       position: fixed;
-      z-index: 8;
-      top: calc(max(14px, env(safe-area-inset-top)) + 68px);
-      right: max(16px, env(safe-area-inset-right));
-      color: rgba(220,232,240,.55);
-      font-size: 11px;
+      z-index: 4;
+      left: max(12px, env(safe-area-inset-left));
+      bottom: max(12px, env(safe-area-inset-bottom));
+      padding: 9px 12px;
+      border-radius: 13px;
+      color: #c7d5df;
+      font-size: 12px;
       text-decoration: none;
+      opacity: .68;
     }
 
-    .credit:hover { color: rgba(255,255,255,.85); }
+    .fallback:hover { opacity: 1; }
 
-    @media (max-width: 700px) {
-      .topbar {
-        min-height: 48px;
-        padding: 7px 8px 7px 13px;
-        border-radius: 16px;
-      }
-
-      .brand-subtitle { display: none; }
-      .username { max-width: 28vw; }
-      .hint {
-        right: 14px;
-        bottom: calc(max(16px, env(safe-area-inset-bottom)) + 58px);
-        max-width: none;
-        text-align: center;
-      }
-      .credit { top: calc(max(14px, env(safe-area-inset-top)) + 61px); }
+    @media (max-width: 620px) {
+      .subtitle { display: none; }
+      .player { max-width: 28vw; }
+      .topbar { min-height: 47px; }
     }
 
     @media (max-height: 480px) and (orientation: landscape) {
       .topbar {
-        top: max(7px, env(safe-area-inset-top));
-        left: max(7px, env(safe-area-inset-left));
-        right: max(7px, env(safe-area-inset-right));
+        top: max(6px, env(safe-area-inset-top));
+        left: max(6px, env(safe-area-inset-left));
+        right: max(6px, env(safe-area-inset-right));
       }
-      .hint {
-        left: max(7px, env(safe-area-inset-left));
-        bottom: max(8px, env(safe-area-inset-bottom));
-        right: auto;
-        max-width: calc(100vw - 260px);
-        padding: 8px 11px;
+      .fallback {
+        left: max(6px, env(safe-area-inset-left));
+        bottom: max(6px, env(safe-area-inset-bottom));
       }
-      .toolbar {
-        right: max(7px, env(safe-area-inset-right));
-        bottom: max(8px, env(safe-area-inset-bottom));
-      }
-      .credit { display: none; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .loader-ring::before { animation-duration: 1.8s; }
-      * { scroll-behavior: auto !important; }
+      .ring::before { animation-duration: 1.8s; }
     }
   </style>
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-      }
-    }
-  </script>
 </head>
 <body>
-  <div id="stage" aria-label="Modern Stadium 3D көрінісі"></div>
+  <iframe
+    id="viewer"
+    title="Modern Stadium 3D"
+    src="https://sketchfab.com/models/21767e058e9e4df8a1c57352611756aa/embed?autostart=1&amp;preload=1&amp;ui_theme=dark&amp;ui_infos=0&amp;ui_inspector=0&amp;ui_help=0&amp;ui_settings=1&amp;ui_watermark=1&amp;ui_watermark_link=1&amp;ui_ar=0&amp;ui_vr=0&amp;dnt=1"
+    allow="autoplay; fullscreen; xr-spatial-tracking"
+    allowfullscreen
+  ></iframe>
 
   <header class="topbar glass">
     <div class="brand">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <div class="brand-copy">
-        <p class="brand-title">Modern Stadium</p>
-        <p class="brand-subtitle">Almas Project · 3D кеңістік</p>
+      <span class="dot" aria-hidden="true"></span>
+      <div>
+        <p class="title">Modern Stadium</p>
+        <p class="subtitle">Сапа құрылғыға автоматты бейімделеді</p>
       </div>
     </div>
-    <div class="top-actions">
-      <span class="username" id="username">Қонақ</span>
-      <button class="icon-button" id="fullscreen" type="button" aria-label="Толық экран" title="Толық экран">
+    <div class="actions">
+      <span class="player" id="player-name">Ойыншы</span>
+      <button id="fullscreen" type="button" aria-label="Толық экран" title="Толық экран">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"></path>
         </svg>
@@ -389,299 +274,60 @@
     </div>
   </header>
 
-  <a class="credit" href="https://sketchfab.com/3d-models/modern-stadium-21767e058e9e4df8a1c57352611756aa" target="_blank" rel="noopener noreferrer">3D: Razny / Sketchfab</a>
-
-  <p class="hint glass" id="hint">Айналдыру: сүйреңіз · Жақындату: екі саусақ немесе дөңгелек</p>
-
-  <div class="toolbar glass">
-    <button class="icon-button" id="reset-camera" type="button" aria-label="Камераны қалпына келтіру" title="Камераны қалпына келтіру">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 10a8 8 0 1 1 2 8M4 10V4m0 6h6"></path>
-      </svg>
-    </button>
-    <button class="quality-button" id="quality" type="button" aria-label="Көрініс сапасы">Сапа: Авто</button>
-  </div>
+  <a class="fallback glass" href="https://sketchfab.com/3d-models/modern-stadium-21767e058e9e4df8a1c57352611756aa" target="_blank" rel="noopener noreferrer">3D ашылмаса, осы жерді басыңыз</a>
 
   <section class="loading" id="loading" aria-live="polite">
     <div class="loader-card glass">
-      <div class="loader-ring" aria-hidden="true"></div>
-      <h1 id="loading-title">Стадион жүктелуде</h1>
-      <p id="loading-status">3D кеңістік құрылғыңызға бейімделіп жатыр</p>
-      <div class="progress-track" aria-hidden="true">
-        <div class="progress-fill" id="progress"></div>
-      </div>
-      <div class="progress-meta">
-        <span id="progress-label">0%</span>
-        <span id="progress-size">Дайындалуда…</span>
-      </div>
-      <div class="error-panel">
-        <button class="retry-button" type="button" id="retry">Қайта жүктеу</button>
-      </div>
+      <div class="ring" aria-hidden="true"></div>
+      <h1>Стадион ашылуда</h1>
+      <p>Жоғары сапалы 3D көрініс құрылғыңызға бейімделіп жатыр</p>
     </div>
   </section>
 
-  <script type="module">
-    import * as THREE from "three";
-    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-    import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-    import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+  <script>
+    (function () {
+      const accessKey = 'almas_stadium_access';
+      const accessRaw = sessionStorage.getItem(accessKey);
 
-    const ACCESS_KEY = "almas_stadium_access";
-    const accessRaw = sessionStorage.getItem(ACCESS_KEY);
-
-    if (!accessRaw) {
-      window.location.replace("./");
-      throw new Error("Registration required");
-    }
-
-    try {
-      const access = JSON.parse(accessRaw);
-      if (access && access.username) {
-        document.getElementById("username").textContent = access.username;
+      if (!accessRaw) {
+        window.location.replace('./');
+        return;
       }
-    } catch (_) {
-      document.getElementById("username").textContent = "Ойыншы";
-    }
 
-    const stage = document.getElementById("stage");
-    const loading = document.getElementById("loading");
-    const loadingTitle = document.getElementById("loading-title");
-    const loadingStatus = document.getElementById("loading-status");
-    const progress = document.getElementById("progress");
-    const progressLabel = document.getElementById("progress-label");
-    const progressSize = document.getElementById("progress-size");
-    const qualityButton = document.getElementById("quality");
-    const hint = document.getElementById("hint");
-
-    const deviceMemory = navigator.deviceMemory || 4;
-    const cpuCores = navigator.hardwareConcurrency || 4;
-    const coarsePointer = matchMedia("(pointer: coarse)").matches;
-    const lowPowerDevice = deviceMemory <= 4 || cpuCores <= 4;
-    const baseProfile = lowPowerDevice ? "smooth" : "high";
-    let qualityMode = "auto";
-    let model = null;
-    let initialCamera = null;
-    let frameRequest = 0;
-    let settleFrames = 0;
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x071019);
-    scene.fog = new THREE.FogExp2(0x071019, 0.000045);
-
-    const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.1, 100000);
-    camera.position.set(10, 7, 10);
-
-    let renderer;
-    try {
-      renderer = new THREE.WebGLRenderer({
-        antialias: !lowPowerDevice,
-        alpha: false,
-        powerPreference: "high-performance",
-        precision: lowPowerDevice ? "mediump" : "highp"
-      });
-    } catch (error) {
-      showError("Бұл құрылғыда 3D көріністі ашу мүмкін болмады.", "WebGL қолжетімсіз.");
-      throw error;
-    }
-
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
-    renderer.setSize(innerWidth, innerHeight, false);
-    stage.appendChild(renderer.domElement);
-
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    scene.environment = environment;
-    pmrem.dispose();
-
-    scene.add(new THREE.HemisphereLight(0xcbe9ff, 0x152016, 1.55));
-
-    const sun = new THREE.DirectionalLight(0xfff0d2, 2.4);
-    sun.position.set(0.8, 1.4, 0.65);
-    scene.add(sun);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = coarsePointer ? 0.08 : 0.065;
-    controls.screenSpacePanning = true;
-    controls.zoomToCursor = true;
-    controls.minPolarAngle = 0.12;
-    controls.maxPolarAngle = Math.PI * 0.92;
-    controls.addEventListener("change", function () { invalidate(5); });
-
-    function currentProfile() {
-      return qualityMode === "auto" ? baseProfile : qualityMode;
-    }
-
-    function pixelRatioForProfile(profile) {
-      const nativeRatio = window.devicePixelRatio || 1;
-      if (profile === "smooth") return Math.min(nativeRatio, coarsePointer ? 0.9 : 1);
-      return Math.min(nativeRatio, coarsePointer ? 1.35 : 1.75);
-    }
-
-    function applyQuality() {
-      renderer.setPixelRatio(pixelRatioForProfile(currentProfile()));
-      renderer.setSize(innerWidth, innerHeight, false);
-      renderer.toneMappingExposure = currentProfile() === "high" ? 1.1 : 1.04;
-      invalidate(3);
-    }
-
-    function invalidate(frames) {
-      settleFrames = Math.max(settleFrames, frames || 1);
-      if (!frameRequest) frameRequest = requestAnimationFrame(renderFrame);
-    }
-
-    function renderFrame() {
-      frameRequest = 0;
-      const changed = controls.update();
-      renderer.render(scene, camera);
-      settleFrames = Math.max(0, settleFrames - 1);
-      if (changed || settleFrames > 0) {
-        frameRequest = requestAnimationFrame(renderFrame);
-      }
-    }
-
-    function formatMB(bytes) {
-      return (bytes / 1048576).toFixed(bytes > 10485760 ? 0 : 1) + " МБ";
-    }
-
-    function frameModel(object) {
-      const box = new THREE.Box3().setFromObject(object);
-      const sphere = box.getBoundingSphere(new THREE.Sphere());
-      const radius = Math.max(sphere.radius, 1);
-      const direction = new THREE.Vector3(1, 0.56, 1).normalize();
-
-      controls.target.copy(sphere.center);
-      camera.near = Math.max(radius / 3000, 0.1);
-      camera.far = radius * 14;
-      camera.position.copy(sphere.center).add(direction.multiplyScalar(radius * 1.65));
-      camera.updateProjectionMatrix();
-
-      controls.minDistance = radius * 0.035;
-      controls.maxDistance = radius * 4.2;
-      controls.update();
-
-      initialCamera = {
-        position: camera.position.clone(),
-        target: controls.target.clone()
-      };
-    }
-
-    function showError(title, status) {
-      loading.classList.add("error");
-      loadingTitle.textContent = title;
-      loadingStatus.textContent = status;
-    }
-
-    applyQuality();
-
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
-
-    loader.load(
-      "./assets/modern_stadium_web.glb",
-      function (gltf) {
-        model = gltf.scene;
-        model.traverse(function (object) {
-          if (!object.isMesh) return;
-          object.castShadow = false;
-          object.receiveShadow = false;
-          object.frustumCulled = true;
-
-          const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.forEach(function (material) {
-            if (!material) return;
-            material.envMapIntensity = lowPowerDevice ? 0.72 : 0.92;
-            material.needsUpdate = true;
-          });
-        });
-
-        scene.add(model);
-        frameModel(model);
-        progress.style.width = "100%";
-        progressLabel.textContent = "100%";
-        progressSize.textContent = "Дайын";
-        loadingStatus.textContent = "Стадион ашылды";
-        invalidate(8);
-
-        setTimeout(function () {
-          loading.classList.add("hidden");
-        }, 420);
-
-        setTimeout(function () {
-          hint.style.opacity = "0";
-        }, 6500);
-      },
-      function (event) {
-        if (!event.lengthComputable || !event.total) {
-          progressSize.textContent = event.loaded ? formatMB(event.loaded) : "Жүктелуде…";
-          return;
-        }
-
-        const percent = Math.min(100, Math.round((event.loaded / event.total) * 100));
-        progress.style.width = Math.max(2, percent) + "%";
-        progressLabel.textContent = percent + "%";
-        progressSize.textContent = formatMB(event.loaded) + " / " + formatMB(event.total);
-
-        if (percent >= 100) {
-          loadingStatus.textContent = "3D модель дайындалып жатыр…";
-        }
-      },
-      function (error) {
-        console.error(error);
-        showError("Стадион жүктелмеді", "Интернетті тексеріп, қайта байқап көріңіз.");
-      }
-    );
-
-    document.getElementById("retry").addEventListener("click", function () {
-      location.reload();
-    });
-
-    document.getElementById("fullscreen").addEventListener("click", async function () {
       try {
-        if (document.fullscreenElement) {
-          await document.exitFullscreen();
-        } else {
-          await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+        const access = JSON.parse(accessRaw);
+        if (access && access.username) {
+          document.getElementById('player-name').textContent = access.username;
         }
       } catch (_) {
-        // Fullscreen can be blocked by the browser; the viewer remains usable.
+        document.getElementById('player-name').textContent = 'Ойыншы';
       }
-    });
 
-    document.getElementById("reset-camera").addEventListener("click", function () {
-      if (!initialCamera) return;
-      camera.position.copy(initialCamera.position);
-      controls.target.copy(initialCamera.target);
-      controls.update();
-      invalidate(10);
-    });
+      const viewer = document.getElementById('viewer');
+      const loading = document.getElementById('loading');
 
-    qualityButton.addEventListener("click", function () {
-      if (qualityMode === "auto") {
-        qualityMode = "high";
-        qualityButton.textContent = "Сапа: Жоғары";
-      } else if (qualityMode === "high") {
-        qualityMode = "smooth";
-        qualityButton.textContent = "Сапа: Жылдам";
-      } else {
-        qualityMode = "auto";
-        qualityButton.textContent = "Сапа: Авто";
-      }
-      applyQuality();
-    });
+      viewer.addEventListener('load', function () {
+        setTimeout(function () {
+          loading.classList.add('hidden');
+        }, 650);
+      });
 
-    window.addEventListener("resize", function () {
-      camera.aspect = innerWidth / innerHeight;
-      camera.updateProjectionMatrix();
-      applyQuality();
-    }, { passive: true });
+      setTimeout(function () {
+        loading.classList.add('hidden');
+      }, 9000);
 
-    document.addEventListener("visibilitychange", function () {
-      if (!document.hidden && model) invalidate(3);
-    });
+      document.getElementById('fullscreen').addEventListener('click', async function () {
+        try {
+          if (document.fullscreenElement) {
+            await document.exitFullscreen();
+          } else {
+            await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+          }
+        } catch (_) {
+          // The browser may block fullscreen; the 3D view stays usable.
+        }
+      });
+    }());
   </script>
 </body>
 </html>
