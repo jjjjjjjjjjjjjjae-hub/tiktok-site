@@ -28,16 +28,16 @@ function Set-WorkerSecret {
     param([string]$Name, [string]$Value)
     $Value | npx wrangler secret put $Name --config wrangler.toml
     if ($LASTEXITCODE -ne 0) {
-        throw "$Name құпия мәнін сақтау сәтсіз аяқталды."
+        throw "Could not store Worker secret: $Name"
     }
 }
 
 if (-not (Test-Path "wrangler.toml")) {
-    Write-Host "Алдымен wrangler.toml.example файлын wrangler.toml деп көшіріп, D1 database_id жазыңыз." -ForegroundColor Yellow
+    Write-Host "Missing wrangler.toml. Copy wrangler.toml.example and add the D1 database_id first." -ForegroundColor Yellow
     exit 1
 }
 
-$tokenSecure = Read-Host "Telegram BotFather берген BOT TOKEN" -AsSecureString
+$tokenSecure = Read-Host "Telegram BOT TOKEN (input is hidden)" -AsSecureString
 $botToken = ConvertTo-PlainText $tokenSecure
 
 $detectedAdminId = $null
@@ -55,7 +55,7 @@ catch {
 }
 
 if ($detectedAdminId) {
-    $typedAdminId = Read-Host "Табылған Telegram ID: $detectedAdminId. Қабылдау үшін Enter басыңыз"
+    $typedAdminId = Read-Host "Detected Telegram ID: $detectedAdminId. Press Enter to accept or type another ID"
     $adminId = if ([string]::IsNullOrWhiteSpace($typedAdminId)) {
         $detectedAdminId
     }
@@ -64,12 +64,12 @@ if ($detectedAdminId) {
     }
 }
 else {
-    Write-Host "Ботқа /start жіберіп, скриптті қайта қоссаңыз ID автоматты табылады." -ForegroundColor Yellow
-    $adminId = Read-Host "Өзіңіздің Telegram сандық ID"
+    Write-Host "Send /start to your bot. You may also enter the numeric ID manually now." -ForegroundColor Yellow
+    $adminId = Read-Host "Your numeric Telegram ID"
 }
 
 if ($adminId -notmatch "^\d+$") {
-    throw "Telegram ID тек сандардан тұруы керек."
+    throw "Telegram ID must contain digits only."
 }
 
 $inviteKey = New-RandomSecret 32
@@ -78,7 +78,7 @@ $webhookSecret = New-RandomSecret 24
 
 npx wrangler deploy --config wrangler.toml
 if ($LASTEXITCODE -ne 0) {
-    throw "Worker жарияланбады."
+    throw "Worker deployment failed."
 }
 
 Set-WorkerSecret "TELEGRAM_BOT_TOKEN" $botToken
@@ -89,12 +89,12 @@ Set-WorkerSecret "TELEGRAM_WEBHOOK_SECRET" $webhookSecret
 
 npx wrangler d1 execute almas-auth --remote --file schema.sql --config wrangler.toml
 if ($LASTEXITCODE -ne 0) {
-    throw "D1 кестелерін жасау сәтсіз аяқталды."
+    throw "Could not create the D1 tables."
 }
 
-$workerUrl = (Read-Host "Жоғарыда шыққан Worker URL-ін жазыңыз").TrimEnd("/")
+$workerUrl = (Read-Host "Paste the Worker URL printed above").TrimEnd("/")
 if ($workerUrl -notmatch "^https://") {
-    throw "Worker URL https:// деп басталуы керек."
+    throw "Worker URL must start with https://"
 }
 
 $webhookUrl = "$workerUrl/telegram"
@@ -107,11 +107,11 @@ $body = @{
 
 $result = Invoke-RestMethod -Method Post -Uri $telegramUrl -ContentType "application/json" -Body $body
 if (-not $result.ok) {
-    throw "Telegram webhook қосылмады."
+    throw "Telegram webhook setup failed."
 }
 
 $botToken = $null
 $tokenSecure.Dispose()
 Write-Host ""
-Write-Host "Дайын. Енді Worker URL-ін app-config.js ішіндегі apiBase жолына жазу керек:" -ForegroundColor Green
+Write-Host "Setup complete. Put this Worker URL into app-config.js apiBase:" -ForegroundColor Green
 Write-Host $workerUrl -ForegroundColor Cyan
