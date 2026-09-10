@@ -1,906 +1,237 @@
 <!DOCTYPE html>
 <html lang="kk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ойынға тіркелу | almas offical</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <style>
-        * {
-            user-select: none;
-            box-sizing: border-box;
-        }
-
-        html {
-            width: 100%;
-            height: 100%;
-            background-color: #050505;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #050505; /* Өте қараңғы фон */
-            overflow: hidden;
-            margin: 0;
-            height: 100vh;
-            height: 100dvh;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Артқы бұлыңғыр жарықтар (айнадан көрінуі үшін) */
-        .bg-shapes {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-            z-index: 0;
-        }
-        
-        .shape-1 {
-            position: absolute;
-            top: -10%;
-            left: -10%;
-            width: 50vw;
-            height: 50vw;
-            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
-            border-radius: 50%;
-            filter: blur(60px);
-        }
-
-        .shape-2 {
-            position: absolute;
-            bottom: -20%;
-            right: -10%;
-            width: 60vw;
-            height: 60vw;
-            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
-            border-radius: 50%;
-            filter: blur(80px);
-        }
-
-        /* Тамшы және айна контейнері */
-        #drop-container {
-            position: fixed;
-            top: -100px; /* Бастапқы орны жоғарыда жасырылған */
-            left: 50%;
-            transform: translate(-50%, -50%);
-            
-            /* Тамшы өлшемдері */
-            width: 20px;
-            height: 20px;
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            
-            /* Айна (Glassmorphism) стилі */
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(30px) saturate(150%);
-            -webkit-backdrop-filter: blur(30px) saturate(150%);
-            border-top: 1px solid rgba(255, 255, 255, 0.4);
-            border-left: 1px solid rgba(255, 255, 255, 0.2);
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 
-                0 25px 50px -12px rgba(0, 0, 0, 0.8),
-                inset 0 0 20px rgba(255, 255, 255, 0.05);
-            
-            z-index: 10;
-            overflow: hidden;
-            
-            /* Анимация өткелдері */
-            transition: 
-                top 0.7s cubic-bezier(0.5, 0, 0.2, 1),
-                width 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                height 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                border-radius 0.6s ease;
-        }
-
-        /* 1-қадам: Тамшының құлауы */
-        #drop-container.fallen {
-            top: 50%;
-            border-radius: 50%;
-        }
-
-        /* 2-қадам: Тамшының тіркелу бетіне айналуы */
-        #drop-container.expanded {
-            width: min(92vw, 380px);
-            height: 280px; /* Бастапқы биіктігі (тек файл жүктеу) */
-            max-height: calc(100dvh - 20px);
-            border-radius: 24px;
-        }
-
-        /* 3-қадам: Файл жүктелгеннен кейінгі толық ашылуы */
-        #drop-container.fully-expanded {
-            height: min(480px, calc(100dvh - 20px));
-        }
-
-        #form-content {
-            position: absolute;
-            inset: 0;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            opacity: 0;
-            transform: scale(0.95);
-            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            pointer-events: none;
-            overflow-y: auto;
-            overscroll-behavior: contain;
-            scrollbar-width: none;
-        }
-
-        #form-content::-webkit-scrollbar {
-            display: none;
-        }
-
-        #form-content.visible {
-            opacity: 1;
-            transform: scale(1);
-            pointer-events: auto;
-        }
-
-        /* Мөлдір өрістер */
-        .glass-input {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            transition: all 0.3s ease;
-        }
-
-        .glass-input:focus {
-            outline: none;
-            border-color: rgba(255, 255, 255, 0.4);
-            background: rgba(0, 0, 0, 0.4);
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
-        }
-
-        .password-input-wrap {
-            position: relative;
-        }
-
-        .password-input-wrap .glass-input {
-            padding-right: 48px;
-        }
-
-        .password-toggle {
-            position: absolute;
-            top: 50%;
-            right: 7px;
-            display: grid;
-            width: 34px;
-            height: 34px;
-            padding: 0;
-            place-items: center;
-            transform: translateY(-50%);
-            border: 0;
-            border-radius: 8px;
-            background: transparent;
-            color: #8b93a3;
-            cursor: pointer;
-            transition: color 0.2s ease, background 0.2s ease;
-        }
-
-        .password-toggle:hover,
-        .password-toggle:focus-visible {
-            outline: none;
-            color: white;
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .password-toggle svg {
-            width: 18px;
-            height: 18px;
-            pointer-events: none;
-        }
-
-        .password-toggle .eye-off-icon,
-        .password-toggle[aria-pressed="true"] .eye-icon {
-            display: none;
-        }
-
-        .password-toggle[aria-pressed="true"] .eye-off-icon {
-            display: block;
-        }
-
-        /* Мөлдір батырма */
-        .glass-button {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .glass-button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.5);
-            transform: translateY(-2px);
-        }
-
-        .glass-button:active {
-            transform: translateY(0);
-        }
-
-        /* Жасырын құпия сөз өрістері үшін */
-        .hidden-fields {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.5s ease 0.3s;
-        }
-        
-        .visible-fields {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .form-main {
-            display: flex;
-            flex: 1;
-            min-height: 0;
-            flex-direction: column;
-        }
-
-        #auth-fields.hidden-fields {
-            flex: 0 0 auto;
-            max-height: 0;
-            margin-top: 0 !important;
-            overflow: hidden;
-        }
-
-        #auth-fields.visible-fields {
-            max-height: 500px;
-        }
-
-        #file-label {
-            max-width: 100%;
-            overflow-wrap: anywhere;
-        }
-
-        .left-panel {
-            display: flex;
-            min-width: 0;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .validation-rules {
-            display: none;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-            padding: 10px 12px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.025);
-        }
-
-        #drop-container.fully-expanded .validation-rules {
-            display: grid;
-        }
-
-        .rules-title {
-            margin: 0 0 5px;
-            color: rgba(255, 255, 255, 0.72);
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .rule-list {
-            display: grid;
-            gap: 3px;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .rule {
-            display: flex;
-            gap: 5px;
-            align-items: flex-start;
-            color: #7d8492;
-            font-size: 10px;
-            line-height: 1.25;
-            transition: color 0.25s ease;
-        }
-
-        .rule::before {
-            flex: 0 0 auto;
-            content: '×';
-            color: #f87171;
-            font-weight: 700;
-        }
-
-        .rule.valid {
-            color: #d1fae5;
-        }
-
-        .rule.valid::before {
-            content: '✓';
-            color: #34d399;
-        }
-
-        .field-error {
-            min-height: 13px;
-            margin: 4px 0 0;
-            color: #f87171;
-            font-size: 10px;
-            line-height: 1.2;
-        }
-
-        .glass-input.input-valid {
-            border-color: rgba(52, 211, 153, 0.65);
-        }
-
-        .glass-input.input-invalid {
-            border-color: rgba(248, 113, 113, 0.75);
-        }
-
-        .password-meter {
-            height: 4px;
-            margin-top: 6px;
-            overflow: hidden;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .password-meter-fill {
-            width: 0;
-            height: 100%;
-            border-radius: inherit;
-            background: #f87171;
-            transition: width 0.25s ease, background 0.25s ease;
-        }
-
-        .password-strength {
-            margin: 3px 0 0;
-            color: #7d8492;
-            font-size: 9px;
-            text-align: right;
-        }
-
-        .auth-stack {
-            display: grid;
-            gap: 10px;
-        }
-
-        .auth-field {
-            display: grid;
-            gap: 4px;
-            min-width: 0;
-        }
-
-        #submit-button {
-            width: 100%;
-            min-height: 42px;
-            margin-top: 0 !important;
-            flex-shrink: 0;
-        }
-
-        .glass-button:disabled {
-            cursor: not-allowed;
-            opacity: 0.42;
-            transform: none;
-        }
-
-        /* Қолданба көлденең ашылғанда барлық өрісті бір экранға сыйғызу */
-        @media (orientation: landscape) {
-            #drop-container.expanded {
-                width: min(92vw, 540px);
-                height: min(74dvh, 250px);
-            }
-
-            #drop-container.fully-expanded {
-                width: min(96vw, 820px);
-                height: min(94dvh, 500px);
-            }
-
-            #drop-container.fully-expanded #form-content {
-                display: flex;
-                flex-direction: column;
-                gap: clamp(5px, 1.2vh, 10px);
-                padding: clamp(10px, 3vh, 18px) clamp(16px, 3vw, 28px);
-                overflow: hidden;
-            }
-
-            #drop-container.fully-expanded #form-content > .text-center {
-                flex: 0 0 auto;
-                margin-bottom: 0 !important;
-            }
-
-            #drop-container.fully-expanded .form-main {
-                display: grid;
-                flex: 1 1 auto;
-                min-height: 0;
-                grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-                gap: clamp(12px, 2.5vw, 24px);
-                align-items: center;
-            }
-
-            #drop-container.fully-expanded #dropzone {
-                width: 100%;
-                min-width: 0;
-                padding: clamp(10px, 2.5vh, 20px) !important;
-            }
-
-            #drop-container.fully-expanded .left-panel {
-                align-self: center;
-            }
-
-            #drop-container.fully-expanded #auth-fields {
-                width: 100%;
-                min-width: 0;
-                max-height: none;
-                align-self: center;
-                justify-content: center;
-                margin-top: 0 !important;
-                overflow: visible;
-            }
-
-            #drop-container.fully-expanded #auth-fields .auth-stack {
-                gap: clamp(5px, 1.2vh, 9px);
-            }
-
-            #drop-container.fully-expanded #auth-fields .auth-field {
-                gap: 3px;
-            }
-
-            #drop-container.fully-expanded .glass-input,
-            #drop-container.fully-expanded .glass-button {
-                padding-top: 9px !important;
-                padding-bottom: 9px !important;
-            }
-
-            #drop-container.fully-expanded #form-content > .mt-auto {
-                flex: 0 0 auto;
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-            }
-        }
-
-        @media (orientation: landscape) and (max-height: 460px) {
-            #drop-container.fully-expanded {
-                height: calc(100dvh - 8px);
-            }
-
-            #drop-container.fully-expanded #form-content {
-                gap: 3px;
-                padding: 6px 14px;
-            }
-
-            #drop-container.fully-expanded .form-main {
-                gap: 12px;
-            }
-
-            #drop-container.fully-expanded .left-panel {
-                gap: 5px;
-            }
-
-            #drop-container.fully-expanded .validation-rules {
-                gap: 6px;
-                padding: 6px 8px;
-            }
-
-            #drop-container.fully-expanded .rule {
-                font-size: 8.5px;
-            }
-
-            #drop-container.fully-expanded #form-content h1 {
-                font-size: 1rem;
-            }
-
-            #drop-container.fully-expanded #form-content > .text-center p {
-                margin-top: 2px;
-                font-size: 10px;
-            }
-
-            #drop-container.fully-expanded #auth-fields .auth-stack {
-                gap: 4px;
-            }
-
-            #drop-container.fully-expanded #auth-fields .auth-field {
-                gap: 2px;
-            }
-
-            #drop-container.fully-expanded #auth-fields label {
-                font-size: 9px;
-            }
-
-            #drop-container.fully-expanded .glass-input,
-            #drop-container.fully-expanded .glass-button {
-                min-height: 32px;
-                padding-top: 6px !important;
-                padding-bottom: 6px !important;
-            }
-
-            #drop-container.fully-expanded .password-toggle {
-                right: 5px;
-                width: 30px;
-                height: 30px;
-            }
-
-            #drop-container.fully-expanded .field-error {
-                min-height: 9px;
-                margin-top: 0;
-                font-size: 8.5px;
-            }
-
-            #drop-container.fully-expanded .password-meter {
-                height: 3px;
-                margin-top: 2px;
-            }
-
-            #drop-container.fully-expanded .password-strength {
-                margin-top: 1px;
-                font-size: 8px;
-                line-height: 1;
-            }
-
-            #drop-container.fully-expanded #submit-button {
-                min-height: 32px;
-                font-size: 12px;
-            }
-
-            #drop-container.fully-expanded #form-content > .mt-auto p {
-                font-size: 8px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <title>almas projekt — Кіру</title>
+  <script src="./app-config.js"></script>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,sans-serif;--bg:#050505;--panel:rgba(17,19,22,.94);--line:rgba(255,255,255,.13);--text:#f5f7f8;--muted:#a7adb5;--accent:#4beeb2;--danger:#ff7f8e;--kh:168px}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text)}
+    body{min-height:100dvh;touch-action:manipulation}
+    button,input{font:inherit}
+    button{border:0}
+    .ambient{position:fixed;inset:0;background:radial-gradient(circle at 16% 10%,rgba(75,238,178,.1),transparent 34%),radial-gradient(circle at 88% 86%,rgba(74,126,255,.08),transparent 38%),#050505;pointer-events:none}
+    .app{position:relative;z-index:1;width:100%;height:100dvh;display:grid;place-items:center;padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));transition:padding-bottom .2s}
+    .app.keyboard-open{padding-bottom:calc(var(--kh) + max(8px,env(safe-area-inset-bottom)))}
+    .panel{width:min(760px,96vw);max-height:100%;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden;border:1px solid var(--line);border-radius:22px;background:var(--panel);box-shadow:0 24px 80px rgba(0,0,0,.5);backdrop-filter:blur(22px)}
+    .head{display:flex;align-items:center;gap:11px;min-height:54px;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .mark{width:34px;height:34px;display:grid;place-items:center;flex:0 0 auto;border-radius:10px;background:var(--accent);color:#04130d;font-size:17px;font-weight:800}
+    .brand{min-width:0}.brand h1{margin:0;font-size:16px;line-height:1.2}.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+    .server{margin-left:auto;display:flex;align-items:center;gap:7px;color:var(--muted);font-size:13px;white-space:nowrap}.server:before{width:7px;height:7px;border-radius:50%;background:#737980;content:""}.server.ready:before{background:var(--accent);box-shadow:0 0 12px rgba(75,238,178,.75)}.server.error:before{background:var(--danger)}
+    .screens{position:relative;min-height:0}.screen{display:none;height:100%;padding:clamp(14px,4vh,30px);overflow:auto;overscroll-behavior:contain}.screen.active{display:grid;align-content:center;animation:enter .2s ease both}@keyframes enter{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .inner{width:min(520px,100%);margin:auto}.title{margin:0;font-size:clamp(20px,4vw,27px);line-height:1.15;letter-spacing:-.025em}.copy{margin:7px 0 16px;color:var(--muted);font-size:15px;line-height:1.4}
+    .dropzone{width:100%;min-height:108px;display:grid;place-items:center;padding:16px;border:1px dashed rgba(255,255,255,.25);border-radius:16px;background:rgba(255,255,255,.035);color:var(--text);cursor:pointer;text-align:center;transition:.18s}.dropzone:hover,.dropzone.dragging{border-color:rgba(75,238,178,.75);background:rgba(75,238,178,.07)}.dropzone:active{transform:scale(.988)}.dropzone svg{width:28px;height:28px;margin-bottom:7px;fill:none;stroke:var(--accent);stroke-width:1.7}.dropzone strong{display:block;max-width:100%;overflow-wrap:anywhere;font-size:15px}.dropzone span span{display:block;margin-top:4px;color:var(--muted);font-size:13px}
+    .file{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+    .player{display:flex;align-items:center;gap:12px;margin:13px 0;padding:11px 13px;border:1px solid rgba(75,238,178,.22);border-radius:14px;background:rgba(75,238,178,.06)}.avatar{width:38px;height:38px;display:grid;place-items:center;flex:0 0 auto;border-radius:50%;background:rgba(75,238,178,.18);color:var(--accent);font-weight:800}.player span{display:block;color:var(--muted);font-size:13px}.player strong{display:block;margin-top:1px;font-size:16px}
+    .methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.method{min-height:90px;padding:14px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.045);color:var(--text);cursor:pointer;text-align:left;transition:.18s}.method:hover,.method:focus-visible{outline:0;border-color:rgba(75,238,178,.55);background:rgba(75,238,178,.07)}.method:active{transform:scale(.985)}.method strong{display:block;font-size:15px}.method span{display:block;margin-top:5px;color:var(--muted);font-size:13px;line-height:1.35}
+    .field{display:grid;gap:5px;margin-top:9px}.field label{color:var(--muted);font-size:13px;font-weight:650}.wrap{position:relative}.input{width:100%;min-height:43px;padding:9px 46px 9px 13px;border:1px solid var(--line);border-radius:12px;outline:0;background:rgba(0,0,0,.27);color:var(--text);caret-color:var(--accent);font-size:16px;user-select:text}.input:focus{border-color:rgba(75,238,178,.75);box-shadow:0 0 0 3px rgba(75,238,178,.1)}.input.invalid{border-color:rgba(255,127,142,.7)}
+    .reveal{position:absolute;top:50%;right:6px;width:34px;height:34px;display:grid;place-items:center;transform:translateY(-50%);border-radius:9px;background:transparent;color:var(--muted);cursor:pointer}.reveal:hover,.reveal:focus-visible{outline:0;background:rgba(255,255,255,.07);color:var(--text)}.reveal svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7}
+    .rules{display:flex;flex-wrap:wrap;gap:5px 9px;margin:7px 0 0;padding:0;list-style:none}.rules li{color:#7d838c;font-size:12px}.rules li:before{margin-right:4px;content:"•"}.rules li.valid{color:var(--accent)}
+    .actions{display:flex;gap:9px;margin-top:13px}.button{min-height:42px;display:flex;flex:1;align-items:center;justify-content:center;padding:9px 15px;border-radius:12px;background:var(--accent);color:#04130d;cursor:pointer;font-size:14px;font-weight:750}.button.secondary{border:1px solid var(--line);background:rgba(255,255,255,.055);color:var(--text)}.button:active:not(:disabled){transform:scale(.985)}.button:disabled{cursor:not-allowed;opacity:.42}
+    .notice{display:none;margin-top:10px;padding:9px 11px;border:1px solid rgba(255,127,142,.25);border-radius:11px;background:rgba(255,127,142,.07);color:#ffd7dc;font-size:13px;line-height:1.4}.notice.visible{display:block}
+    .spinner{width:18px;height:18px;display:none;margin-right:8px;border:2px solid rgba(4,19,13,.28);border-top-color:#04130d;border-radius:50%;animation:spin .7s linear infinite}.busy .spinner{display:inline-block}@keyframes spin{to{transform:rotate(360deg)}}
+    .keyboard{position:fixed;z-index:20;left:50%;bottom:max(6px,env(safe-area-inset-bottom));width:min(720px,calc(100vw - 12px));height:var(--kh);display:none;grid-template-rows:repeat(4,minmax(0,1fr));gap:5px;padding:7px;transform:translateX(-50%);border:1px solid rgba(255,255,255,.15);border-radius:16px;background:rgba(12,14,17,.98);box-shadow:0 -14px 50px rgba(0,0,0,.45);backdrop-filter:blur(18px)}.keyboard.visible{display:grid;animation:kbin .17s ease both}@keyframes kbin{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}.key-row{display:grid;gap:5px;min-height:0}.key{min-width:0;padding:0 4px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:#24272c;color:#fff;cursor:pointer;font-size:14px;font-weight:650;touch-action:manipulation}.key:active{background:#3a3f46;transform:translateY(1px)}.key.fn{background:#171a1e;color:var(--accent);font-size:13px}.key.done{background:var(--accent);color:#04130d}
+    .toast{position:fixed;z-index:30;top:max(10px,env(safe-area-inset-top));left:50%;max-width:calc(100vw - 24px);padding:10px 14px;transform:translate(-50%,-160%);border:1px solid rgba(255,255,255,.15);border-radius:12px;background:rgba(19,22,26,.96);box-shadow:0 12px 34px rgba(0,0,0,.42);font-size:14px;text-align:center;transition:transform .22s}.toast.visible{transform:translate(-50%,0)}
+    @media (orientation:landscape) and (max-height:480px){:root{--kh:148px}.app{padding:6px 10px}.app.keyboard-open{padding:5px 10px calc(var(--kh) + 7px)}.panel{width:min(860px,97vw);border-radius:16px}.head{min-height:42px;padding:5px 10px}.mark{width:30px;height:30px;border-radius:8px;font-size:15px}.brand p{display:none}.screen{padding:8px 16px}.title{font-size:19px}.copy{margin:3px 0 8px;font-size:13px}.dropzone{min-height:74px;padding:8px}.player{margin:6px 0;padding:6px 9px}.avatar{width:31px;height:31px}.method{min-height:64px;padding:8px 10px}.field{margin-top:5px}.input{min-height:36px;padding-top:6px;padding-bottom:6px}.rules{margin-top:3px}.actions{margin-top:7px}.button{min-height:35px}.keyboard{gap:4px;padding:5px}.key-row{gap:4px}}
+    @media(max-width:560px){.server span{display:none}.methods{grid-template-columns:1fr}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  </style>
 </head>
 <body>
+  <div class="ambient" aria-hidden="true"></div>
+  <main class="app" id="app">
+    <section class="panel" aria-label="almas projekt кіру">
+      <header class="head">
+        <div class="mark">A</div>
+        <div class="brand"><h1>almas projekt</h1><p>Қауіпсіз ойыншы кіруі</p></div>
+        <div class="server" id="server-state"><span>Сервер</span></div>
+      </header>
+      <div class="screens">
+        <section class="screen active" id="screen-invite"><div class="inner">
+          <h2 class="title">Шақыру файлын таңдаңыз</h2>
+          <p class="copy">Telegram-бот берген бір реттік <b>.almasinvite</b> файлын салыңыз.</p>
+          <button class="dropzone" id="dropzone" type="button"><span>
+            <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+            <strong id="file-label">Файлды таңдау</strong><span>Тек .almasinvite · 32 КБ-тан аспасын</span>
+          </span></button>
+          <input class="file" id="invite-file" type="file" accept=".almasinvite,application/vnd.almas.invite+json,application/json">
+          <p class="notice" id="invite-notice" role="alert"></p>
+        </div></section>
 
-    <!-- Артқы бұлыңғыр жарықтар -->
-    <div class="bg-shapes">
-        <div class="shape-1"></div>
-        <div class="shape-2"></div>
-    </div>
+        <section class="screen" id="screen-method"><div class="inner">
+          <h2 class="title">Кіру тәсілін таңдаңыз</h2>
+          <div class="player"><div class="avatar player-avatar">A</div><div><span>Ойыншы</span><strong class="player-name">—</strong></div></div>
+          <div class="methods">
+            <button class="method" id="choose-device" type="button"><strong>Телефон құлпы</strong><span>PIN, графикалық кілт немесе саусақ ізімен кіреді.</span></button>
+            <button class="method" id="choose-password" type="button"><strong>Құпиясөз</strong><span>Келесі кіргенде өз құпиясөзіңіз сұралады.</span></button>
+          </div>
+          <p class="notice" id="method-notice" role="alert"></p>
+        </div></section>
 
-    <div id="drop-container">
-        
-        <!-- Тіркелу формасының ішкі мазмұны -->
-        <div id="form-content">
-            
-            <!-- Тақырып -->
-            <div class="text-center mb-6">
-                <h1 class="text-xl font-semibold tracking-wider text-white">Ойынға Тіркелу</h1>
-                <p class="text-gray-400 text-xs mt-2 font-light tracking-wide">
-                    Жалғастыру үшін файл жүктеңіз
-                </p>
-            </div>
+        <section class="screen" id="screen-setup"><div class="inner">
+          <h2 class="title">Құпиясөз ойлап табыңыз</h2>
+          <div class="player"><div class="avatar player-avatar">A</div><div><span>Ойыншы</span><strong class="player-name">—</strong></div></div>
+          <div class="field"><label for="new-password">Құпиясөз</label><div class="wrap">
+            <input class="input custom-input" id="new-password" type="password" maxlength="32" inputmode="none" autocomplete="off" readonly>
+            <button class="reveal" type="button" data-reveal="new-password" aria-label="Құпиясөзді көрсету"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/></svg></button>
+          </div></div>
+          <div class="field"><label for="confirm-password">Құпиясөзді қайталау</label><div class="wrap">
+            <input class="input custom-input" id="confirm-password" type="password" maxlength="32" inputmode="none" autocomplete="off" readonly>
+            <button class="reveal" type="button" data-reveal="confirm-password" aria-label="Құпиясөзді көрсету"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/></svg></button>
+          </div></div>
+          <ul class="rules"><li id="rule-length">8–32 таңба</li><li id="rule-case">Үлкен/кіші әріп</li><li id="rule-number">1 сан</li><li id="rule-special">1 арнайы белгі</li><li id="rule-match">Екеуі бірдей</li></ul>
+          <div class="actions"><button class="button secondary" id="back-method" type="button">Артқа</button><button class="button" id="create-password" type="button" disabled><span class="spinner"></span><span>Сақтау</span></button></div>
+          <p class="notice" id="setup-notice" role="alert"></p>
+        </div></section>
 
-            <div class="form-main">
-                <div class="left-panel">
-                    <!-- Файл жүктеу аймағы -->
-                    <div id="dropzone" class="border border-dashed border-white/20 rounded-xl p-5 text-center cursor-pointer transition-all duration-300 hover:border-white/50 hover:bg-white/5" onclick="document.getElementById('file-upload').click()">
-                        <div class="mb-2 flex justify-center">
-                            <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                            </svg>
-                        </div>
-                        <p class="text-[13px] text-gray-300 font-medium" id="file-label">Файлды таңдау</p>
-                        <input type="file" id="file-upload" class="hidden" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt" required>
-                    </div>
+        <section class="screen" id="screen-password-login"><div class="inner">
+          <h2 class="title">Қайта кіру</h2>
+          <div class="player"><div class="avatar player-avatar">A</div><div><span>Ойыншы</span><strong class="player-name">—</strong></div></div>
+          <div class="field"><label for="login-password">Құпиясөз</label><div class="wrap">
+            <input class="input custom-input" id="login-password" type="password" maxlength="32" inputmode="none" autocomplete="off" readonly>
+            <button class="reveal" type="button" data-reveal="login-password" aria-label="Құпиясөзді көрсету"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/></svg></button>
+          </div></div>
+          <div class="actions"><button class="button secondary forget" type="button">Файлмен кіру</button><button class="button" id="login-password-button" type="button" disabled><span class="spinner"></span><span>Кіру</span></button></div>
+          <p class="notice" id="login-notice" role="alert"></p>
+        </div></section>
 
-                    <div id="validation-rules" class="validation-rules" aria-live="polite">
-                        <div>
-                            <p class="rules-title">Ойыншы аты</p>
-                            <ul class="rule-list">
-                                <li class="rule" id="rule-name-length">3–16 таңба</li>
-                                <li class="rule" id="rule-name-start">Әріптен басталсын</li>
-                                <li class="rule" id="rule-name-chars">Тек әріп, сан және _</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <p class="rules-title">Құпиясөз</p>
-                            <ul class="rule-list">
-                                <li class="rule" id="rule-pass-length">8–32 таңба</li>
-                                <li class="rule" id="rule-pass-case">Үлкен және кіші әріп</li>
-                                <li class="rule" id="rule-pass-number">Кемінде 1 сан</li>
-                                <li class="rule" id="rule-pass-special">Кемінде 1 арнайы белгі</li>
-                                <li class="rule" id="rule-pass-space">Бос орын болмасын</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+        <section class="screen" id="screen-device-login"><div class="inner">
+          <h2 class="title">Телефон құлпымен кіріңіз</h2>
+          <div class="player"><div class="avatar player-avatar">A</div><div><span>Ойыншы</span><strong class="player-name">—</strong></div></div>
+          <div class="actions"><button class="button secondary forget" type="button">Файлмен кіру</button><button class="button" id="unlock-device" type="button"><span class="spinner"></span><span>Құлыпты ашу</span></button></div>
+          <p class="notice" id="device-notice" role="alert"></p>
+        </div></section>
+      </div>
+    </section>
+  </main>
+  <section class="keyboard" id="keyboard" aria-label="Қолданба пернетақтасы"></section>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-                <div id="auth-fields" class="hidden-fields flex-1 flex flex-col justify-end mt-4">
-                    <div class="auth-stack">
-                        <div class="auth-field">
-                            <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Ойыншы аты</label>
-                            <input type="text" id="username" name="username" minlength="3" maxlength="16" autocomplete="username" placeholder="Мысалы: ProGamer" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
-                            <p class="field-error" id="username-error"></p>
-                        </div>
+  <script>
+  (() => {
+    "use strict";
+    const cfg=Object.assign({apiBase:"",appVersion:"1.1.0"},window.ALMAS_CONFIG||{});
+    const state={apiBase:String(cfg.apiBase||"").replace(/\/$/,""),activeInput:null,mode:"letters",shift:false,player:null,ticket:"",session:null,pendingUnlock:null,busy:false};
+    const $=id=>document.getElementById(id),app=$("app"),keyboard=$("keyboard"),fileInput=$("invite-file"),dropzone=$("dropzone"),fileLabel=$("file-label");
+    const screens={invite:$("screen-invite"),method:$("screen-method"),setup:$("screen-setup"),passwordLogin:$("screen-password-login"),deviceLogin:$("screen-device-login")};
+    let toastTimer;
 
-                        <div class="auth-field">
-                            <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Құпия сөз</label>
-                            <div class="password-input-wrap">
-                                <input type="password" id="password" name="password" minlength="8" maxlength="32" autocomplete="new-password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
-                                <button type="button" class="password-toggle" data-target="password" aria-label="Құпиясөзді көрсету" aria-pressed="false" title="Құпиясөзді көрсету">
-                                    <svg class="eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
-                                        <circle cx="12" cy="12" r="2.75" stroke-width="1.7"></circle>
-                                    </svg>
-                                    <svg class="eye-off-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="m3 3 18 18M10.6 6.15A9.8 9.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.15 2.8M6.3 6.35C3.85 8.2 2.5 12 2.5 12s3.5 6 9.5 6a9.6 9.6 0 0 0 3.15-.52M9.9 9.9A2.75 2.75 0 0 0 13.95 14"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="password-meter"><div class="password-meter-fill" id="password-meter-fill"></div></div>
-                            <p class="password-strength" id="password-strength">Құпиясөз күші: —</p>
-                        </div>
+    function screen(name){Object.entries(screens).forEach(([key,el])=>el.classList.toggle("active",key===name));hideKeyboard();clearNotices()}
+    function player(name){const n=String(name||"Ойыншы"),initial=n.trim().charAt(0).toUpperCase()||"A";document.querySelectorAll(".player-name").forEach(el=>el.textContent=n);document.querySelectorAll(".player-avatar").forEach(el=>el.textContent=initial)}
+    function clearNotices(){document.querySelectorAll(".notice").forEach(el=>{el.textContent="";el.classList.remove("visible")})}
+    function notice(id,msg){const el=$(id);el.textContent=msg;el.classList.add("visible")}
+    function toast(msg){clearTimeout(toastTimer);const el=$("toast");el.textContent=msg;el.classList.add("visible");toastTimer=setTimeout(()=>el.classList.remove("visible"),2500)}
+    function busy(button,on){state.busy=on;if(button){button.disabled=on;button.classList.toggle("busy",on)}}
+    function native(){return window.AlmasNative&&typeof window.AlmasNative.getDeviceId==="function"?window.AlmasNative:null}
+    function browserId(){let id=localStorage.getItem("almas_browser_device_id");if(!id){id=crypto.randomUUID?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,"0")).join("");localStorage.setItem("almas_browser_device_id",id)}return id}
+    function deviceId(){const bridge=native();return bridge?bridge.getDeviceId():browserId()}
+    function loadSession(){try{const bridge=native(),raw=bridge?bridge.getSession():localStorage.getItem("almas_app_session");return raw?JSON.parse(raw):null}catch(_){return null}}
+    function saveSession(value){const raw=JSON.stringify(value),bridge=native();if(bridge)bridge.saveSession(raw);else localStorage.setItem("almas_app_session",raw)}
+    function clearSession(){const bridge=native();if(bridge)bridge.clearSession();else localStorage.removeItem("almas_app_session");state.session=null}
 
-                        <div class="auth-field">
-                            <label class="text-[11px] text-gray-400 font-medium ml-1 tracking-wide uppercase">Құпия сөзді қайталау</label>
-                            <div class="password-input-wrap">
-                                <input type="password" id="confirm-password" name="confirm-password" minlength="8" maxlength="32" autocomplete="new-password" placeholder="••••••••" class="glass-input w-full rounded-lg px-4 py-3 text-sm placeholder-gray-500" required disabled>
-                                <button type="button" class="password-toggle" data-target="confirm-password" aria-label="Құпиясөзді көрсету" aria-pressed="false" title="Құпиясөзді көрсету">
-                                    <svg class="eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
-                                        <circle cx="12" cy="12" r="2.75" stroke-width="1.7"></circle>
-                                    </svg>
-                                    <svg class="eye-off-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="m3 3 18 18M10.6 6.15A9.8 9.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.15 2.8M6.3 6.35C3.85 8.2 2.5 12 2.5 12s3.5 6 9.5 6a9.6 9.6 0 0 0 3.15-.52M9.9 9.9A2.75 2.75 0 0 0 13.95 14"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                            <p class="field-error" id="confirm-error"></p>
-                        </div>
+    async function api(path,body){
+      if(!state.apiBase)throw new Error("Кіру сервері әлі қосылмаған.");
+      let response;try{response=await fetch(state.apiBase+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})}catch(_){throw new Error("Серверге қосылмады. Интернетті тексеріңіз.")}
+      let result={};try{result=await response.json()}catch(_){throw new Error("Сервер дұрыс жауап бермеді.")}
+      if(!response.ok){const error=new Error(result.message||"Сұрау орындалмады.");error.code=result.code||"REQUEST_FAILED";throw error}return result
+    }
 
-                        <button type="button" id="submit-button" onclick="submitForm()" class="glass-button w-full font-medium py-3 px-4 rounded-lg text-sm tracking-wide mt-2" disabled>
-                            Тіркелуді аяқтау
-                        </button>
-                    </div>
-                </div>
-            </div>
+    async function redeem(file){
+      clearNotices();
+      if(!file.name.toLowerCase().endsWith(".almasinvite"))throw new Error("Тек .almasinvite файлын таңдаңыз.");
+      if(file.size>32768)throw new Error("Шақыру файлы тым үлкен.");
+      let doc;try{doc=JSON.parse(await file.text())}catch(_){throw new Error("Файл оқылмады немесе бүлінген.")}
+      if(!doc||doc.format!=="almasinvite"||doc.version!==1||typeof doc.payload!=="string"||doc.payload.length<40||doc.payload.length>8192)throw new Error("Бұл almas projekt шақыру файлы емес.");
+      fileLabel.textContent=file.name;
+      const result=await api("/api/invites/redeem",{invite:doc,deviceId:deviceId(),appVersion:cfg.appVersion});
+      state.player=result.player;state.ticket=result.registrationTicket;player(result.player.name);screen("method")
+    }
 
-            <!-- Авторлық жазу -->
-            <div class="mt-auto pt-6 text-center">
-                <p class="text-[10px] text-gray-500 font-light tracking-widest uppercase">
-                    Created by <span class="text-gray-300 font-medium">almas offical</span>
-                </p>
-            </div>
+    function checks(){
+      const password=$("new-password").value,confirmation=$("confirm-password").value;
+      const list={length:password.length>=8&&password.length<=32,case:/[a-z]/.test(password)&&/[A-Z]/.test(password),number:/[0-9]/.test(password),special:/[!@#$%^&*._-]/.test(password),match:confirmation.length>0&&password===confirmation};
+      Object.entries(list).forEach(([key,ok])=>$("rule-"+key).classList.toggle("valid",ok));
+      const valid=Object.values(list).every(Boolean);$("create-password").disabled=!valid||state.busy;$("confirm-password").classList.toggle("invalid",confirmation.length>0&&!list.match);return valid
+    }
 
-        </div>
-    </div>
+    function finish(result){
+      const saved={accountId:result.player.id,playerName:result.player.name,authMethod:result.authMethod,deviceToken:result.deviceToken||(state.session&&state.session.deviceToken)};
+      saveSession(saved);state.session=saved;sessionStorage.setItem("almas_stadium_access",JSON.stringify({username:result.player.name,accountId:result.player.id,accessToken:result.accessToken,registeredAt:Date.now()}));toast("Кіру сәтті");setTimeout(()=>location.replace("./stadium.html"),280)
+    }
 
-    <!-- Хабарлама терезесі (Alert орнына) -->
-    <div id="message-box" class="fixed top-6 right-6 px-5 py-3 rounded-xl shadow-2xl transform translate-x-full transition-transform duration-500 z-50 flex items-center gap-3" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
-        <div class="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-        </div>
-        <span id="message-text" class="text-white text-xs font-medium tracking-wide">Сәтті орындалды!</span>
-    </div>
+    async function registerPassword(){
+      if(!checks()||state.busy)return;const button=$("create-password");busy(button,true);
+      try{finish(await api("/api/register",{registrationTicket:state.ticket,authMethod:"password",password:$("new-password").value,deviceId:deviceId()}))}
+      catch(error){notice("setup-notice",error.message)}finally{busy(button,false);checks()}
+    }
 
-    <script>
-        const dropContainer = document.getElementById('drop-container');
-        const formContent = document.getElementById('form-content');
-        
-        const fileInput = document.getElementById('file-upload');
-        const fileLabel = document.getElementById('file-label');
-        const dropzone = document.getElementById('dropzone');
-        
-        const authFields = document.getElementById('auth-fields');
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        const confirmPasswordInput = document.getElementById('confirm-password');
-        const usernameError = document.getElementById('username-error');
-        const confirmError = document.getElementById('confirm-error');
-        const passwordMeterFill = document.getElementById('password-meter-fill');
-        const passwordStrength = document.getElementById('password-strength');
-        const submitButton = document.getElementById('submit-button');
-        const passwordToggles = document.querySelectorAll('.password-toggle');
-        
-        const messageBox = document.getElementById('message-box');
-        const messageText = document.getElementById('message-text');
+    async function registerDevice(){
+      const button=$("choose-device");busy(button,true);
+      try{finish(await api("/api/register",{registrationTicket:state.ticket,authMethod:"device",deviceId:deviceId()}))}
+      catch(error){notice("method-notice",error.message)}finally{busy(button,false)}
+    }
 
-        const nameStartPattern = /^[A-Za-zА-Яа-яЁёӘәІіҢңҒғҮүҰұҚқӨөҺһ]/;
-        const nameAllowedPattern = /^[A-Za-zА-Яа-яЁёӘәІіҢңҒғҮүҰұҚқӨөҺһ0-9_]+$/;
-        const upperCasePattern = /[A-ZА-ЯЁӘІҢҒҮҰҚӨҺ]/;
-        const lowerCasePattern = /[a-zа-яёәіңғүұқөһ]/;
-        const specialPattern = /[!@#$%^&*._-]/;
+    function requestUnlock(purpose){
+      clearNotices();const bridge=native(),target=purpose==="register"?"method-notice":"device-notice";
+      if(!bridge){notice(target,"Телефон құлпы тек almas projekt қолданбасында жұмыс істейді.");return}
+      if(!bridge.isDeviceSecure()){notice(target,"Телефонға PIN, графикалық кілт немесе саусақ ізін орнатыңыз.");return}
+      state.pendingUnlock=purpose;if(purpose==="login")busy($("unlock-device"),true);bridge.requestDeviceUnlock()
+    }
 
-        function setRuleState(id, isValid) {
-            document.getElementById(id).classList.toggle('valid', isValid);
-        }
+    async function passwordLogin(){
+      const password=$("login-password").value;if(!password||state.busy)return;const button=$("login-password-button");busy(button,true);
+      try{finish(await api("/api/login/password",{accountId:state.session.accountId,deviceId:deviceId(),deviceToken:state.session.deviceToken,password:password}))}
+      catch(error){$("login-password").classList.add("invalid");notice("login-notice",error.message)}finally{busy(button,false);button.disabled=$("login-password").value.length===0}
+    }
 
-        function setInputState(input, isValid, hasValue) {
-            input.classList.toggle('input-valid', hasValue && isValid);
-            input.classList.toggle('input-invalid', hasValue && !isValid);
-        }
+    async function deviceLogin(){
+      try{finish(await api("/api/login/device",{accountId:state.session.accountId,deviceId:deviceId(),deviceToken:state.session.deviceToken}))}
+      catch(error){notice("device-notice",error.message)}finally{busy($("unlock-device"),false)}
+    }
 
-        function validateForm() {
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value;
-            const confirmation = confirmPasswordInput.value;
+    window.AlmasApp={onDeviceUnlock(success){const purpose=state.pendingUnlock;state.pendingUnlock=null;if(!success){busy($("unlock-device"),false);notice(purpose==="register"?"method-notice":"device-notice","Телефон құлпы расталмады.");return}if(purpose==="register")registerDevice();if(purpose==="login")deviceLogin()}};
 
-            const nameChecks = {
-                length: username.length >= 3 && username.length <= 16,
-                start: nameStartPattern.test(username),
-                chars: nameAllowedPattern.test(username)
-            };
+    const letterRows=[["1","2","3","4","5","6","7","8","9","0"],["q","w","e","r","t","y","u","i","o","p"],["a","s","d","f","g","h","j","k","l"],["SHIFT","z","x","c","v","b","n","m","BACK","SYMBOLS","DONE"]];
+    const symbolRows=[["1","2","3","4","5","6","7","8","9","0"],["!","@","#","$","%","^","&","*",".","_"],["-","+","=","?","/",":",";","(",")",","],["LETTERS","[","]","{","}","<",">","BACK","DONE"]];
+    const labels={SHIFT:"⇧",BACK:"⌫",SYMBOLS:"#+=",LETTERS:"ABC",DONE:"Дайын"};
 
-            const passwordChecks = {
-                length: password.length >= 8 && password.length <= 32,
-                letterCase: upperCasePattern.test(password) && lowerCasePattern.test(password),
-                number: /[0-9]/.test(password),
-                special: specialPattern.test(password),
-                noSpace: password.length > 0 && !/\s/.test(password)
-            };
+    function renderKeyboard(){
+      const rows=state.mode==="symbols"?symbolRows:letterRows;keyboard.replaceChildren();
+      rows.forEach(row=>{const rowEl=document.createElement("div");rowEl.className="key-row";rowEl.style.gridTemplateColumns="repeat("+row.length+",minmax(0,1fr))";
+        row.forEach(value=>{const button=document.createElement("button");button.type="button";button.className="key";button.dataset.key=value;if(labels[value])button.classList.add("fn");if(value==="DONE")button.classList.add("done");const visible=state.mode==="letters"&&state.shift&&/^[a-z]$/.test(value)?value.toUpperCase():value;button.textContent=labels[value]||visible;rowEl.appendChild(button)});keyboard.appendChild(rowEl)})
+    }
+    function showKeyboard(input){state.activeInput=input;keyboard.classList.add("visible");app.classList.add("keyboard-open");renderKeyboard();requestAnimationFrame(()=>{input.focus({preventScroll:true});const length=input.value.length;input.setSelectionRange(length,length)})}
+    function hideKeyboard(){keyboard.classList.remove("visible");app.classList.remove("keyboard-open");state.activeInput=null}
+    function insert(input,value){const max=Number(input.maxLength)||32;if(input.value.length>=max)return;const start=input.selectionStart==null?input.value.length:input.selectionStart,end=input.selectionEnd==null?start:input.selectionEnd;input.value=(input.value.slice(0,start)+value+input.value.slice(end)).slice(0,max);const cursor=Math.min(start+value.length,input.value.length);input.setSelectionRange(cursor,cursor);input.dispatchEvent(new Event("input",{bubbles:true}))}
+    function erase(input){const start=input.selectionStart==null?input.value.length:input.selectionStart,end=input.selectionEnd==null?start:input.selectionEnd;if(start!==end){input.value=input.value.slice(0,start)+input.value.slice(end);input.setSelectionRange(start,start)}else if(start>0){input.value=input.value.slice(0,start-1)+input.value.slice(start);input.setSelectionRange(start-1,start-1)}input.dispatchEvent(new Event("input",{bubbles:true}))}
 
-            setRuleState('rule-name-length', nameChecks.length);
-            setRuleState('rule-name-start', nameChecks.start);
-            setRuleState('rule-name-chars', nameChecks.chars);
-            setRuleState('rule-pass-length', passwordChecks.length);
-            setRuleState('rule-pass-case', passwordChecks.letterCase);
-            setRuleState('rule-pass-number', passwordChecks.number);
-            setRuleState('rule-pass-special', passwordChecks.special);
-            setRuleState('rule-pass-space', passwordChecks.noSpace);
+    keyboard.addEventListener("pointerdown",event=>event.preventDefault());
+    keyboard.addEventListener("click",event=>{const button=event.target.closest("[data-key]"),input=state.activeInput;if(!button||!input)return;const key=button.dataset.key;
+      if(key==="BACK"){erase(input);return}if(key==="SHIFT"){state.shift=!state.shift;renderKeyboard();return}if(key==="SYMBOLS"){state.mode="symbols";renderKeyboard();return}if(key==="LETTERS"){state.mode="letters";renderKeyboard();return}if(key==="DONE"){if(input.id==="new-password")showKeyboard($("confirm-password"));else hideKeyboard();return}
+      insert(input,state.mode==="letters"&&state.shift?key.toUpperCase():key);if(state.shift){state.shift=false;renderKeyboard()}
+    });
 
-            const usernameValid = Object.values(nameChecks).every(Boolean);
-            const passwordValid = Object.values(passwordChecks).every(Boolean);
-            const confirmationValid = confirmation.length > 0 && confirmation === password;
+    document.querySelectorAll(".custom-input").forEach(input=>{input.addEventListener("pointerdown",event=>{event.preventDefault();showKeyboard(input)});input.addEventListener("focus",()=>{if(state.activeInput!==input)showKeyboard(input)})});
+    document.querySelectorAll("[data-reveal]").forEach(button=>button.addEventListener("click",()=>{const input=$(button.dataset.reveal);input.type=input.type==="password"?"text":"password";button.setAttribute("aria-label",input.type==="password"?"Құпиясөзді көрсету":"Құпиясөзді жасыру");showKeyboard(input)}));
+    $("new-password").addEventListener("input",checks);$("confirm-password").addEventListener("input",checks);$("login-password").addEventListener("input",event=>{event.target.classList.remove("invalid");$("login-password-button").disabled=event.target.value.length===0||state.busy});
 
-            usernameError.textContent = username.length > 0 && !usernameValid
-                ? 'Ат ережелерге сәйкес емес'
-                : '';
-            confirmError.textContent = confirmation.length > 0 && !confirmationValid
-                ? 'Құпиясөздер бірдей емес'
-                : '';
+    dropzone.addEventListener("click",()=>fileInput.click());
+    fileInput.addEventListener("change",async()=>{const file=fileInput.files&&fileInput.files[0];if(!file)return;try{await redeem(file)}catch(error){notice("invite-notice",error.message);fileLabel.textContent="Файлды қайта таңдау";fileInput.value=""}});
+    ["dragenter","dragover"].forEach(name=>dropzone.addEventListener(name,event=>{event.preventDefault();dropzone.classList.add("dragging")}));
+    ["dragleave","drop"].forEach(name=>dropzone.addEventListener(name,event=>{event.preventDefault();dropzone.classList.remove("dragging")}));
+    dropzone.addEventListener("drop",async event=>{const file=event.dataTransfer.files&&event.dataTransfer.files[0];if(file)try{await redeem(file)}catch(error){notice("invite-notice",error.message)}});
 
-            setInputState(usernameInput, usernameValid, username.length > 0);
-            setInputState(passwordInput, passwordValid, password.length > 0);
-            setInputState(confirmPasswordInput, confirmationValid, confirmation.length > 0);
+    $("choose-password").addEventListener("click",()=>{screen("setup");$("new-password").value="";$("confirm-password").value="";checks();showKeyboard($("new-password"))});
+    $("choose-device").addEventListener("click",()=>requestUnlock("register"));$("back-method").addEventListener("click",()=>screen("method"));$("create-password").addEventListener("click",registerPassword);$("login-password-button").addEventListener("click",passwordLogin);$("unlock-device").addEventListener("click",()=>requestUnlock("login"));
+    document.querySelectorAll(".forget").forEach(button=>button.addEventListener("click",()=>{clearSession();fileInput.value="";fileLabel.textContent="Файлды таңдау";screen("invite")}));
 
-            const passedPasswordRules = Object.values(passwordChecks).filter(Boolean).length;
-            const strengthPercent = Math.round((passedPasswordRules / 5) * 100);
-            passwordMeterFill.style.width = `${strengthPercent}%`;
-
-            if (password.length === 0) {
-                passwordMeterFill.style.background = '#f87171';
-                passwordStrength.textContent = 'Құпиясөз күші: —';
-            } else if (passedPasswordRules <= 2) {
-                passwordMeterFill.style.background = '#f87171';
-                passwordStrength.textContent = 'Құпиясөз күші: әлсіз';
-            } else if (passedPasswordRules <= 4) {
-                passwordMeterFill.style.background = '#fbbf24';
-                passwordStrength.textContent = 'Құпиясөз күші: орташа';
-            } else {
-                passwordMeterFill.style.background = '#34d399';
-                passwordStrength.textContent = 'Құпиясөз күші: мықты';
-            }
-
-            const fileSelected = fileInput.files && fileInput.files.length > 0;
-            const formValid = fileSelected && usernameValid && passwordValid && confirmationValid;
-            submitButton.disabled = !formValid;
-
-            return { fileSelected, usernameValid, passwordValid, confirmationValid, formValid };
-        }
-
-        // Бет жүктелгенде орындалатын тамшы анимациясы
-        window.onload = () => {
-            // 1. Тамшы жоғарыдан құлайды
-            setTimeout(() => {
-                dropContainer.classList.add('fallen');
-            }, 100);
-
-            // 2. Тамшы ортаға жеткен соң, тіркелу бетіне дейін жайылады (айналады)
-            setTimeout(() => {
-                dropContainer.classList.add('expanded');
-            }, 800); // құлау уақыты (0.7s) + аздаған кідіріс
-
-            // 3. Айна жайылған соң ішіндегі жазулар пайда болады
-            setTimeout(() => {
-                formContent.classList.add('visible');
-            }, 1400); // жайылу уақыты (0.6s)
-        };
-
-        // Файл жүктеу логикасы
-        fileInput.addEventListener('change', function(e) {
-            const fileName = e.target.files[0]?.name;
-            
-            if (fileName) {
-                // Файл атын шығару
-                fileLabel.textContent = fileName;
-                fileLabel.classList.add('text-white', 'font-medium');
-                dropzone.classList.add('border-white/50', 'bg-white/10');
-                
-                // Айна контейнерін төмен қарай ұзарту
-                dropContainer.classList.add('fully-expanded');
-                
-                // Жасырын өрістерді (логин/пароль) көрсету
-                authFields.classList.remove('hidden-fields');
-                authFields.classList.add('visible-fields');
-                
-                // Өрістерді қолжетімді ету
-                usernameInput.disabled = false;
-                passwordInput.disabled = false;
-                confirmPasswordInput.disabled = false;
-                validateForm();
-            }
-        });
-
-        usernameInput.addEventListener('input', validateForm);
-        passwordInput.addEventListener('input', validateForm);
-        confirmPasswordInput.addEventListener('input', validateForm);
-
-        function setPasswordVisibility(toggle, visible) {
-            const input = document.getElementById(toggle.dataset.target);
-            const label = visible ? 'Құпиясөзді жасыру' : 'Құпиясөзді көрсету';
-
-            input.type = visible ? 'text' : 'password';
-            toggle.setAttribute('aria-pressed', String(visible));
-            toggle.setAttribute('aria-label', label);
-            toggle.title = label;
-        }
-
-        passwordToggles.forEach((toggle) => {
-            toggle.addEventListener('click', () => {
-                const isVisible = toggle.getAttribute('aria-pressed') === 'true';
-                setPasswordVisibility(toggle, !isVisible);
-                document.getElementById(toggle.dataset.target).focus();
-            });
-        });
-
-        // Файлды сүйреп әкелу (Drag & Drop) мүмкіндігі
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.classList.add('border-white/50', 'bg-white/5');
-        });
-
-        dropzone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            if(!fileInput.files.length) {
-                dropzone.classList.remove('border-white/50', 'bg-white/5');
-            }
-        });
-
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (e.dataTransfer.files.length) {
-                fileInput.files = e.dataTransfer.files;
-                const event = new Event('change');
-                fileInput.dispatchEvent(event);
-            }
-        });
-
-        // Хабарлама көрсету функциясы
-        function showMessage(text) {
-            messageText.textContent = text;
-            messageBox.style.transform = 'translateX(0)';
-            setTimeout(() => {
-                messageBox.style.transform = 'translateX(150%)';
-            }, 3000);
-        }
-
-        // Тіркелуді аяқтау батырмасы
-        function submitForm() {
-            const username = usernameInput.value.trim();
-            const validation = validateForm();
-
-            if (!validation.fileSelected) {
-                showMessage('Алдымен файлды таңдаңыз!');
-                return;
-            }
-
-            if (!validation.formValid) {
-                showMessage('Барлық шарттарды орындаңыз!');
-                return;
-            }
-
-            showMessage(`Қош келдіңіз, ${username}! Стадион ашылуда…`);
-            submitButton.disabled = true;
-
-            sessionStorage.setItem('almas_stadium_access', JSON.stringify({
-                username,
-                registeredAt: Date.now()
-            }));
-
-            setTimeout(() => {
-                window.location.href = './stadium.html';
-            }, 900);
-        }
-    </script>
+    function boot(){const server=$("server-state");server.classList.toggle("ready",Boolean(state.apiBase));server.classList.toggle("error",!state.apiBase);state.session=loadSession();if(state.session&&state.session.accountId&&state.session.deviceToken&&state.session.playerName){player(state.session.playerName);screen(state.session.authMethod==="device"?"deviceLogin":"passwordLogin")}else screen("invite")}
+    boot();
+  })();
+  </script>
 </body>
 </html>
+

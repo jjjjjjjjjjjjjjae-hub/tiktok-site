@@ -1,0 +1,4 @@
+auth-worker/.dev.vars
+auth-worker/wrangler.toml
+auth-worker/node_modules/
+
