@@ -33,7 +33,35 @@ if (-not (Test-Path "wrangler.toml")) {
 
 $tokenSecure = Read-Host "Telegram BotFather берген BOT TOKEN" -AsSecureString
 $botToken = ConvertTo-PlainText $tokenSecure
-$adminId = Read-Host "Өзіңіздің Telegram сандық ID"
+
+$detectedAdminId = $null
+try {
+    $updates = Invoke-RestMethod -Method Get -Uri "https://api.telegram.org/bot$botToken/getUpdates"
+    $lastMessage = $updates.result |
+        Where-Object { $_.message -and $_.message.from -and $_.message.from.id } |
+        Select-Object -Last 1
+    if ($lastMessage) {
+        $detectedAdminId = [string]$lastMessage.message.from.id
+    }
+}
+catch {
+    $detectedAdminId = $null
+}
+
+if ($detectedAdminId) {
+    $typedAdminId = Read-Host "Табылған Telegram ID: $detectedAdminId. Қабылдау үшін Enter басыңыз"
+    $adminId = if ([string]::IsNullOrWhiteSpace($typedAdminId)) {
+        $detectedAdminId
+    }
+    else {
+        $typedAdminId
+    }
+}
+else {
+    Write-Host "Ботқа /start жіберіп, скриптті қайта қоссаңыз ID автоматты табылады." -ForegroundColor Yellow
+    $adminId = Read-Host "Өзіңіздің Telegram сандық ID"
+}
+
 if ($adminId -notmatch "^\d+$") {
     throw "Telegram ID тек сандардан тұруы керек."
 }
