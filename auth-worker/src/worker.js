@@ -233,6 +233,7 @@ async function redeemInvite(request, env, origin) {
   if (payload.version !== 1 ||
       typeof payload.inviteId !== "string" ||
       typeof payload.token !== "string" ||
+      typeof payload.playerName !== "string" ||
       !Number.isInteger(payload.expiresAt) ||
       payload.expiresAt <= currentTime) {
     throw new HttpError(410, "INVITE_EXPIRED", "Шақыру мерзімі аяқталған.");
@@ -245,6 +246,7 @@ async function redeemInvite(request, env, origin) {
 
   if (!invite ||
       !constantTimeEqual(String(invite.token_hash), tokenHash) ||
+      !constantTimeEqual(String(invite.player_name), payload.playerName) ||
       Number(invite.expires_at) <= currentTime) {
     throw new HttpError(400, "INVALID_INVITE", "Шақыру жарамсыз немесе мерзімі аяқталған.");
   }
@@ -540,6 +542,7 @@ async function createInvite(env, playerName, adminId) {
     version: 1,
     inviteId,
     token,
+    playerName,
     expiresAt
   }, env.INVITE_ENCRYPTION_KEY);
 
@@ -660,4 +663,3 @@ export default {
     }
   }
 };
-
