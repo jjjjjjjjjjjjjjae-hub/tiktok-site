@@ -47,5 +47,13 @@ CREATE TABLE IF NOT EXISTS registration_tickets (
 CREATE INDEX IF NOT EXISTS idx_registration_tickets_expiry
 ON registration_tickets(expires_at);
 
-PRAGMA optimize;
+-- Retried Telegram updates reuse the same encrypted invitation.
+CREATE TABLE IF NOT EXISTS telegram_invite_deliveries (
+  command_id TEXT PRIMARY KEY,
+  invite_id TEXT NOT NULL UNIQUE REFERENCES invites(id),
+  document_json TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  delivered_at INTEGER
+);
 
+PRAGMA optimize;

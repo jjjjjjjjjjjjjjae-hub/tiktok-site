@@ -160,6 +160,31 @@ async function createAccessToken(user, deviceHash, secret) {
   return payload + "." + base64UrlEncode(signature);
 }
 
+async function checkSession(request, env, origin) {
+  const body = await readJson(request);
+  const token = typeof body.accessToken === "string" ? body.accessToken : "";
+  let payload;
+  try {
+    if (token.length > 4096) throw new Error("invalid");
+    const parts = token.split(".");
+    if (parts.length !== 2 || !parts.every(part => /^[A-Za-z0-9_-]+$/.test(part))) throw new Error("invalid");
+    const key = await crypto.subtle.importKey("raw", base64UrlDecode(env.SESSION_SIGNING_KEY),
+      { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+    const valid = await crypto.subtle.verify("HMAC", key, base64UrlDecode(parts[1]), encoder.encode(parts[0]));
+    if (!valid) throw new Error("invalid");
+    payload = JSON.parse(decoder.decode(base64UrlDecode(parts[0])));
+    if (!Number.isInteger(payload.exp) || payload.exp <= nowSeconds() || typeof payload.sub !== "string" || typeof payload.device !== "string") throw new Error("expired");
+  } catch {
+    throw new HttpError(401, "SESSION_INVALID", "Кіру мерзімі аяқталды. Қайта кіріңіз.");
+  }
+  const user = await env.DB.prepare("SELECT id, player_name, device_hash, status FROM users WHERE id = ?")
+    .bind(payload.sub).first();
+  if (!user || user.status !== "active" || !constantTimeEqual(user.device_hash, payload.device)) {
+    throw new HttpError(401, "SESSION_INVALID", "Кіруге рұқсат жоқ.");
+  }
+  return json(env, origin, { ok: true, player: { id: user.id, name: user.player_name } });
+}
+
 function corsHeaders(env, origin) {
   const allowedOrigin = String(env.APP_ORIGIN || "");
   const headers = {
@@ -271,7 +296,7 @@ async function redeemInvite(request, env, origin) {
         "WHERE id = ? AND token_hash = ? AND used_at IS NULL AND expires_at > ?"
       ).bind(currentTime, deviceHash, invite.id, tokenHash, currentTime),
       env.DB.prepare(
-        "INSERT INTO users " +
+        "INSERT OR IGNORE INTO users " +
         "(id, player_name, invite_id, status, auth_method, device_hash, created_at, updated_at) " +
         "SELECT ?, player_name, id, 'pending', NULL, ?, ?, ? FROM invites " +
         "WHERE id = ? AND used_at = ? AND used_device_hash = ?"
@@ -454,21 +479,25 @@ async function loginWithPassword(request, env, origin) {
   const valid = constantTimeEqual(actualHash, base64UrlDecode(user.password_hash));
 
   if (!valid) {
-    const attempts = Number(user.failed_attempts || 0) + 1;
-    const lockedUntil = attempts >= 5 ? currentTime + 300 : null;
     await env.DB.prepare(
-      "UPDATE users SET failed_attempts = ?, locked_until = ?, updated_at = ? WHERE id = ?"
-    ).bind(attempts >= 5 ? 0 : attempts, lockedUntil, currentTime, user.id).run();
+      "UPDATE users SET failed_attempts = CASE WHEN failed_attempts + 1 >= 5 THEN 0 ELSE failed_attempts + 1 END, " +
+      "locked_until = CASE WHEN failed_attempts + 1 >= 5 THEN ? ELSE NULL END, updated_at = ? " +
+      "WHERE id = ? AND (locked_until IS NULL OR locked_until <= ?)"
+    ).bind(currentTime + 300, currentTime, user.id, currentTime).run();
+    const current = await env.DB.prepare("SELECT locked_until FROM users WHERE id = ?").bind(user.id).first();
+    const locked = Number(current && current.locked_until) > currentTime;
     throw new HttpError(
-      attempts >= 5 ? 429 : 401,
-      attempts >= 5 ? "LOGIN_LOCKED" : "PASSWORD_INCORRECT",
-      attempts >= 5 ? "Қате әрекет көп. 5 минуттан кейін қайталаңыз." : "Құпиясөз қате."
+      locked ? 429 : 401,
+      locked ? "LOGIN_LOCKED" : "PASSWORD_INCORRECT",
+      locked ? "Қате әрекет көп. 5 минуттан кейін қайталаңыз." : "Құпиясөз қате."
     );
   }
 
-  await env.DB.prepare(
-    "UPDATE users SET failed_attempts = 0, locked_until = NULL, updated_at = ? WHERE id = ?"
-  ).bind(currentTime, user.id).run();
+  const reset = await env.DB.prepare(
+    "UPDATE users SET failed_attempts = 0, locked_until = NULL, updated_at = ? WHERE id = ? " +
+    "AND (locked_until IS NULL OR locked_until <= ?)"
+  ).bind(currentTime, user.id, currentTime).run();
+  if (changeCount(reset) !== 1) throw new HttpError(429, "LOGIN_LOCKED", "Қате әрекет көп. 5 минуттан кейін қайталаңыз.");
 
   const accessToken = await createAccessToken(user, deviceHash, env.SESSION_SIGNING_KEY);
   return json(env, origin, {
@@ -482,7 +511,7 @@ async function loginWithPassword(request, env, origin) {
 async function telegramApi(env, method, options) {
   const response = await fetch(
     "https://api.telegram.org/bot" + env.TELEGRAM_BOT_TOKEN + "/" + method,
-    options
+    { ...options, signal: AbortSignal.timeout(30000) }
   );
   const result = await response.json();
   if (!response.ok || !result.ok) {
@@ -518,7 +547,16 @@ async function sendInviteDocument(env, chatId, playerName, inviteId, documentVal
   return telegramApi(env, "sendDocument", { method: "POST", body: form });
 }
 
-async function createInvite(env, playerName, adminId) {
+async function createInvite(env, playerName, adminId, commandId) {
+  if (commandId) {
+    const previous = await env.DB.prepare(
+      "SELECT invite_id, document_json, expires_at, delivered_at FROM telegram_invite_deliveries WHERE command_id = ?"
+    ).bind(commandId).first();
+    if (previous) return {
+      inviteId: previous.invite_id, expiresAt: previous.expires_at,
+      document: JSON.parse(previous.document_json), delivered: Boolean(previous.delivered_at)
+    };
+  }
   const existing = await env.DB.prepare(
     "SELECT id FROM users WHERE player_name = ? AND status != 'blocked'"
   ).bind(playerName).first();
@@ -532,12 +570,6 @@ async function createInvite(env, playerName, adminId) {
   const createdAt = nowSeconds();
   const expiresAt = createdAt + INVITE_LIFETIME_SECONDS;
 
-  await env.DB.prepare(
-    "INSERT INTO invites " +
-    "(id, token_hash, player_name, created_at, expires_at, used_at, used_device_hash, created_by_telegram_id) " +
-    "VALUES (?, ?, ?, ?, ?, NULL, NULL, ?)"
-  ).bind(inviteId, tokenHash, playerName, createdAt, expiresAt, String(adminId)).run();
-
   const encrypted = await encryptInvite({
     version: 1,
     inviteId,
@@ -546,22 +578,32 @@ async function createInvite(env, playerName, adminId) {
     expiresAt
   }, env.INVITE_ENCRYPTION_KEY);
 
+  const document = { format: "almasinvite", version: 1, payload: encrypted };
+  const statements = [env.DB.prepare(
+    "INSERT INTO invites " +
+    "(id, token_hash, player_name, created_at, expires_at, used_at, used_device_hash, created_by_telegram_id) " +
+    "VALUES (?, ?, ?, ?, ?, NULL, NULL, ?)"
+  ).bind(inviteId, tokenHash, playerName, createdAt, expiresAt, String(adminId))];
+  if (commandId) statements.push(env.DB.prepare(
+    "INSERT INTO telegram_invite_deliveries(command_id,invite_id,document_json,expires_at) VALUES(?,?,?,?)"
+  ).bind(commandId, inviteId, JSON.stringify(document), expiresAt));
+  await env.DB.batch(statements);
   return {
     inviteId,
     expiresAt,
-    document: { format: "almasinvite", version: 1, payload: encrypted }
+    document
   };
 }
 
 async function handleTelegram(request, env) {
   const suppliedSecret = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
-  if (!constantTimeEqual(suppliedSecret, String(env.TELEGRAM_WEBHOOK_SECRET || ""))) {
+  if (!env.TELEGRAM_WEBHOOK_SECRET || !constantTimeEqual(suppliedSecret, String(env.TELEGRAM_WEBHOOK_SECRET))) {
     return new Response("Forbidden", { status: 403 });
   }
 
   const update = await readJson(request);
   const message = update.message;
-  if (!message || !message.text || !message.from) {
+  if (!message || !message.text || !message.from || !message.chat) {
     return new Response("OK");
   }
 
@@ -570,6 +612,7 @@ async function handleTelegram(request, env) {
   if (!constantTimeEqual(senderId, String(env.ADMIN_TELEGRAM_ID || ""))) {
     return new Response("OK");
   }
+  if (message.chat.type !== "private" || chatId !== senderId) return new Response("OK");
 
   const text = String(message.text).trim();
   const command = text.match(/^\/new(?:@\w+)?\s+(.+)$/u);
@@ -583,7 +626,10 @@ async function handleTelegram(request, env) {
       );
     } else if (command) {
       const playerName = cleanPlayerName(command[1]);
-      const invite = await createInvite(env, playerName, senderId);
+      if (!Number.isSafeInteger(update.update_id)) return new Response("Bad update", { status: 400 });
+      const commandId = String(env.TELEGRAM_BOT_TOKEN).split(":")[0] + ":" + senderId + ":" + update.update_id;
+      const invite = await createInvite(env, playerName, senderId, commandId);
+      if (invite.delivered) return new Response("OK");
       await sendInviteDocument(
         env,
         chatId,
@@ -592,11 +638,14 @@ async function handleTelegram(request, env) {
         invite.document,
         invite.expiresAt
       );
+      await env.DB.prepare("UPDATE telegram_invite_deliveries SET delivered_at = ? WHERE command_id = ?")
+        .bind(nowSeconds(), commandId).run();
     } else {
       await sendTelegramMessage(env, chatId, "Пәрмен: /new Player_Name");
     }
   } catch (error) {
     console.error("Telegram command failed", error && error.code ? error.code : "UNKNOWN");
+    if (!(error instanceof HttpError)) return new Response("Retry later", { status: 503 });
     await sendTelegramMessage(
       env,
       chatId,
@@ -615,6 +664,7 @@ async function handleApi(request, env) {
   if (path === "/api/register") return registerUser(request, env, origin);
   if (path === "/api/login/password") return loginWithPassword(request, env, origin);
   if (path === "/api/login/device") return loginWithDevice(request, env, origin);
+  if (path === "/api/session") return checkSession(request, env, origin);
   throw new HttpError(404, "NOT_FOUND", "Мұндай сұрау жоқ.");
 }
 
@@ -644,17 +694,17 @@ export default {
         return json(env, origin, { ok: true, service: "almas-auth", version: 1 });
       }
       if (request.method === "POST" && url.pathname === "/telegram") {
-        return handleTelegram(request, env);
+        return await handleTelegram(request, env);
       }
       if (request.method === "POST" && url.pathname.startsWith("/api/")) {
-        return handleApi(request, env);
+        return await handleApi(request, env);
       }
       return new Response("Not found", { status: 404 });
     } catch (error) {
       if (error instanceof HttpError) {
         return json(env, origin, { ok: false, code: error.code, message: error.message }, error.status);
       }
-      console.error("Unhandled worker error", error);
+      console.error("Unhandled worker error");
       return json(env, origin, {
         ok: false,
         code: "SERVER_ERROR",

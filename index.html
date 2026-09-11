@@ -134,7 +134,7 @@
 
     async function api(path,body){
       if(!state.apiBase)throw new Error("Кіру сервері әлі қосылмаған.");
-      let response;try{response=await fetch(state.apiBase+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})}catch(_){throw new Error("Серверге қосылмады. Интернетті тексеріңіз.")}
+      let response;try{response=await fetch(state.apiBase+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)})}catch(_){throw new Error("Серверге қосылмады. Сервер мен интернетті тексеріңіз.")}
       let result={};try{result=await response.json()}catch(_){throw new Error("Сервер дұрыс жауап бермеді.")}
       if(!response.ok){const error=new Error(result.message||"Сұрау орындалмады.");error.code=result.code||"REQUEST_FAILED";throw error}return result
     }
@@ -228,10 +228,9 @@
     $("choose-device").addEventListener("click",()=>requestUnlock("register"));$("back-method").addEventListener("click",()=>screen("method"));$("create-password").addEventListener("click",registerPassword);$("login-password-button").addEventListener("click",passwordLogin);$("unlock-device").addEventListener("click",()=>requestUnlock("login"));
     document.querySelectorAll(".forget").forEach(button=>button.addEventListener("click",()=>{clearSession();fileInput.value="";fileLabel.textContent="Файлды таңдау";screen("invite")}));
 
-    function boot(){const server=$("server-state");server.classList.toggle("ready",Boolean(state.apiBase));server.classList.toggle("error",!state.apiBase);state.session=loadSession();if(state.session&&state.session.accountId&&state.session.deviceToken&&state.session.playerName){player(state.session.playerName);screen(state.session.authMethod==="device"?"deviceLogin":"passwordLogin")}else screen("invite")}
+    async function boot(){const server=$("server-state"),label=server.querySelector("span");state.session=loadSession();if(state.session&&state.session.accountId&&state.session.deviceToken&&state.session.playerName){player(state.session.playerName);screen(state.session.authMethod==="device"?"deviceLogin":"passwordLogin")}else screen("invite");try{if(!state.apiBase)throw new Error();if(label)label.textContent="Қосылуда…";const response=await fetch(state.apiBase+"/health",{signal:AbortSignal.timeout(8000)});const result=await response.json();if(!response.ok||!result.ok)throw new Error();server.classList.add("ready");if(label)label.textContent="Сервер қосулы"}catch(_){server.classList.add("error");if(label)label.textContent="Сервер қосылмаған"}}
     boot();
   })();
   </script>
 </body>
 </html>
-
