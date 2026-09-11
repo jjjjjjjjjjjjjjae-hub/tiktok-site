@@ -1,0 +1,10 @@
+{
+  "name": "almas-projekt-server",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "start": "node server/index.mjs",
+    "test": "node --test server/tests/*.test.mjs"
+  }
+}

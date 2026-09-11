@@ -1,0 +1,44 @@
+name: Check secure invite system
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "index.html"
+      - "app-config.js"
+      - "stadium.html"
+      - "server/**"
+      - "START_ALMAS.cmd"
+      - "package.json"
+      - "auth-worker/**"
+      - ".github/workflows/check-secure-invite.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Check Worker syntax
+        run: node --check auth-worker/src/worker.js
+      - name: Check inline application script
+        shell: bash
+        run: |
+          node -e "const fs=require('fs');const h=fs.readFileSync('index.html','utf8');const m=[...h.matchAll(/<script>([\s\S]*?)<\/script>/g)];if(m.length!==1)throw Error('inline script missing');new Function(m[0][1]);"
+      - name: Test registration, sessions, Telegram polling and persistence
+        run: npm test
+      - name: Verify the Windows launcher
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: START_ALMAS.cmd --no-bot --check

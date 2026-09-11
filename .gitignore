@@ -1,0 +1,16 @@
+auth-worker/.dev.vars
+auth-worker/wrangler.toml
+auth-worker/node_modules/
+
+# Personal configuration and local database files must never enter Git or an APK.
+BOT_CONFIG_LOCAL.txt
+BOT_CONFIG_LOCAL.*.txt
+.env
+.env.*
+!.env.example
+node_modules/
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.sites-runtime/

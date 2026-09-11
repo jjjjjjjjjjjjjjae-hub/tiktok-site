@@ -4,12 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
-  <title>Modern Stadium</title>
-  <script>
-    if (!sessionStorage.getItem('almas_stadium_access')) {
-      window.location.replace('./');
-    }
-  </script>
+  <title>almas projekt — Стадион</title>
+  <script src="./app-config.js"></script>
   <style>
     * { box-sizing: border-box; }
 
@@ -29,14 +25,38 @@
       border: 0;
       background: #000;
     }
+    #viewer[hidden],#status[hidden]{display:none}
+    #status{position:absolute;inset:0;display:grid;place-content:center;gap:16px;text-align:center;padding:24px;color:#f5f7f8;font:16px system-ui,sans-serif}
+    #retry{font:inherit;color:#04130d;background:#4beeb2;border:0;border-radius:12px;padding:12px 20px;cursor:pointer}
   </style>
 </head>
 <body>
+  <div id="status" role="status"><span id="message">Кіру тексерілуде…</span><button id="retry" type="button" hidden>Қайта тексеру</button></div>
   <iframe
     id="viewer"
     title="Modern Stadium 3D"
-    src="https://sketchfab.com/models/21767e058e9e4df8a1c57352611756aa/embed?autostart=1&amp;preload=1&amp;ui_theme=dark&amp;ui_infos=0&amp;ui_inspector=0&amp;ui_help=0&amp;ui_settings=0&amp;ui_fullscreen=0&amp;ui_ar=0&amp;ui_vr=0&amp;ui_watermark=1&amp;ui_watermark_link=1&amp;dnt=1"
     allow="autoplay"
+    hidden
   ></iframe>
+  <script>
+    "use strict";
+    document.getElementById('retry').addEventListener('click',()=>location.reload());
+    (async()=>{
+      let session;
+      try{session=JSON.parse(sessionStorage.getItem('almas_stadium_access')||'null')}catch{}
+      if(!session||!session.accessToken){location.replace('./');return}
+      const base=String((window.ALMAS_CONFIG||{}).apiBase||'').replace(/\/$/,'');
+      try{
+        if(!base)throw new Error('Кіру сервері әлі қосылмаған.');
+        const response=await fetch(base+'/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accessToken:session.accessToken}),signal:AbortSignal.timeout(15000)});
+        if(response.status===401){sessionStorage.removeItem('almas_stadium_access');location.replace('./');return}
+        const result=await response.json();
+        if(!response.ok||!result.ok)throw new Error('Кіруді тексеру мүмкін болмады.');
+        const viewer=document.getElementById('viewer');
+        viewer.src='https://sketchfab.com/models/21767e058e9e4df8a1c57352611756aa/embed?autostart=1&preload=1&ui_theme=dark&ui_infos=0&ui_inspector=0&ui_help=0&ui_settings=0&ui_fullscreen=0&ui_ar=0&ui_vr=0&ui_watermark=1&ui_watermark_link=1&dnt=1';
+        viewer.hidden=false;document.getElementById('status').hidden=true;
+      }catch(error){document.getElementById('message').textContent=error.message==='Кіру сервері әлі қосылмаған.'?error.message:'Серверге қосылмады. Сервер мен интернетті тексеріңіз.';document.getElementById('retry').hidden=false}
+    })();
+  </script>
 </body>
 </html>
