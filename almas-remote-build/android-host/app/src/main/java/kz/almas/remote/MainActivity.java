@@ -26,6 +26,7 @@ public class MainActivity extends Activity {
     private static final String PREFS = "almas_remote";
     private static final String KEY_PIN = "pair_pin";
     private TextView status;
+    private TextView rootStatus;
     private String pin;
 
     @Override
@@ -35,7 +36,6 @@ public class MainActivity extends Activity {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 200);
         }
 
-        // Keep the pairing PIN stable across Activity recreation/orientation changes.
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         pin = prefs.getString(KEY_PIN, null);
         if (pin == null || pin.length() != 6) {
@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
         root.setGravity(Gravity.CENTER_HORIZONTAL);
         root.setBackgroundColor(Color.rgb(20, 20, 24));
 
-        TextView title = text("ALMAS REMOTE HOST", 28, Color.WHITE);
+        TextView title = text("ALMAS REMOTE HOST V2.2", 28, Color.WHITE);
         title.setGravity(Gravity.CENTER);
         root.addView(title, fullWrap());
 
@@ -65,6 +65,14 @@ public class MainActivity extends Activity {
         pinView.setGravity(Gravity.CENTER);
         pinView.setPadding(0, 12, 0, 18);
         root.addView(pinView, fullWrap());
+
+        Button rootBtn = button("0. ROOT MODE қосу (Magisk Grant)");
+        rootBtn.setOnClickListener(v -> requestRoot());
+        root.addView(rootBtn, fullWrap());
+
+        rootStatus = text("ROOT: тексерілмеген", 16, Color.LTGRAY);
+        rootStatus.setGravity(Gravity.CENTER);
+        root.addView(rootStatus, fullWrap());
 
         Button access = button("1. Басқару рұқсатын ашу (Accessibility)");
         access.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
@@ -81,16 +89,35 @@ public class MainActivity extends Activity {
         });
         root.addView(stop, fullWrap());
 
-        status = text("Алдымен Accessibility рұқсатын қосып, кейін экранды бөлісуді баста.", 17, Color.LTGRAY);
+        status = text("Алдымен ROOT рұқсатын бер, Accessibility қос, кейін экранды бөлісуді баста.", 17, Color.LTGRAY);
         status.setPadding(0, 18, 0, 0);
         status.setGravity(Gravity.CENTER);
         root.addView(status, fullWrap());
 
-        TextView warning = text("PIN енді қолданба қайта ашылса да өзгермейді. PIN-ді тек өз ноутбугыңа енгіз.", 14, Color.GRAY);
+        TextView warning = text("ROOT тек сен Magisk-та Grant басқанда беріледі. /dev/uinput табылса, келесі input backend соны пайдалана алады.", 14, Color.GRAY);
         warning.setPadding(0, 12, 0, 0);
         warning.setGravity(Gravity.CENTER);
         root.addView(warning, fullWrap());
         setContentView(root);
+    }
+
+    private void requestRoot() {
+        rootStatus.setText("ROOT: Magisk рұқсатын күтіп тұр...");
+        status.setText("Magisk терезесі шықса — Grant / Разрешить бас.");
+        new Thread(() -> {
+            RootBridge.Status s = RootBridge.probeInteractive();
+            runOnUiThread(() -> {
+                if (s.root) {
+                    rootStatus.setText(s.uinput ? "ROOT: ON ✅   /dev/uinput: BAR ✅" : "ROOT: ON ✅   /dev/uinput: ЖОҚ");
+                    status.setText(s.uinput
+                            ? "Root дайын. uinput табылды — kernel-level input backend жасауға болады."
+                            : "Root дайын. Touchpad fallback жұмыс істейді; uinput жоқ болса Accessibility backend қолданылады.");
+                } else {
+                    rootStatus.setText("ROOT: OFF ❌");
+                    status.setText("Root берілмеді. Magisk-та Almas Remote Host үшін Grant таңда.");
+                }
+            });
+        }, "root-probe").start();
     }
 
     private void requestProjection() {
@@ -102,7 +129,6 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == CAPTURE_REQUEST && resultCode == RESULT_OK && data != null) {
-            // Stop any stale server instance first so displayed PIN and server PIN always match.
             stopService(new Intent(this, RemoteService.class));
 
             Intent i = new Intent(this, RemoteService.class);
