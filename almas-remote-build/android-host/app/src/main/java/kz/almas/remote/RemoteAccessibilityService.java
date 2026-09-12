@@ -7,11 +7,24 @@ import android.view.accessibility.AccessibilityEvent;
 
 public class RemoteAccessibilityService extends AccessibilityService {
     private static volatile RemoteAccessibilityService instance;
+    private static volatile String foregroundPackage = "";
 
     @Override public void onServiceConnected() { instance = this; }
-    @Override public void onAccessibilityEvent(AccessibilityEvent event) {}
+
+    @Override
+    public void onAccessibilityEvent(AccessibilityEvent event) {
+        if (event == null) return;
+        CharSequence pkg = event.getPackageName();
+        if (pkg != null) foregroundPackage = pkg.toString();
+    }
+
     @Override public void onInterrupt() {}
     @Override public void onDestroy() { if (instance == this) instance = null; super.onDestroy(); }
+
+    public static String getForegroundPackage() {
+        String p = foregroundPackage;
+        return p == null ? "" : p;
+    }
 
     public static boolean tap(float nx, float ny) {
         RemoteAccessibilityService s = instance;
