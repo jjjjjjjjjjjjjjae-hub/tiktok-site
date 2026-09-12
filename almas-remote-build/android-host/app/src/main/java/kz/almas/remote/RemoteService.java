@@ -191,7 +191,17 @@ public class RemoteService extends Service {
             if (p.length == 3 && p[0].equals("TAP")) {
                 RemoteAccessibilityService.tap(Float.parseFloat(p[1]), Float.parseFloat(p[2]));
             } else if (p.length == 6 && p[0].equals("SWIPE")) {
-                RemoteAccessibilityService.swipe(Float.parseFloat(p[1]), Float.parseFloat(p[2]), Float.parseFloat(p[3]), Float.parseFloat(p[4]), Long.parseLong(p[5]));
+                RemoteAccessibilityService.swipe(
+                        Float.parseFloat(p[1]), Float.parseFloat(p[2]),
+                        Float.parseFloat(p[3]), Float.parseFloat(p[4]),
+                        Long.parseLong(p[5]));
+            } else if (p.length == 10 && p[0].equals("DUALSWIPE")) {
+                RemoteAccessibilityService.dualSwipe(
+                        Float.parseFloat(p[1]), Float.parseFloat(p[2]),
+                        Float.parseFloat(p[3]), Float.parseFloat(p[4]),
+                        Float.parseFloat(p[5]), Float.parseFloat(p[6]),
+                        Float.parseFloat(p[7]), Float.parseFloat(p[8]),
+                        Long.parseLong(p[9]));
             }
         } catch (Exception ignored) {}
     }
