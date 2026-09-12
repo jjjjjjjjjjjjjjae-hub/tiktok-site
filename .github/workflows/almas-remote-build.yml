@@ -44,24 +44,6 @@ jobs:
           python-version: '3.12'
       - name: Install builder
         run: python -m pip install --upgrade pip pyinstaller pillow
-      - name: Use bundled joystick image
-        working-directory: almas-remote-build/windows-client
-        shell: pwsh
-        run: |
-          @'
-          from pathlib import Path
-          p = Path("almas_remote_client.py")
-          s = p.read_text(encoding="utf-8")
-          start = s.index('JOYSTICK_IMAGE_B64 = """')
-          end = s.index('"""', start + len('JOYSTICK_IMAGE_B64 = """')) + 3
-          repl = '''import sys
-          _ASSET_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
-          with open(os.path.join(_ASSET_DIR, "joystick.jpg"), "rb") as _asset_file:
-              JOYSTICK_IMAGE_B64 = base64.b64encode(_asset_file.read()).decode()
-          '''
-          p.write_text(s[:start] + repl + s[end:], encoding="utf-8")
-          '@ | Set-Content -Encoding UTF8 prepare_asset.py
-          python prepare_asset.py
       - name: Build EXE
         working-directory: almas-remote-build/windows-client
         run: pyinstaller --noconfirm --onefile --windowed --add-data "joystick.jpg;." --name 'Almas Remote Client' almas_remote_client.py
