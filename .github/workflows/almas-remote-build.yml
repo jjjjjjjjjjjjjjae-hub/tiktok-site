@@ -1,4 +1,4 @@
-name: Build Almas Remote V2.1
+name: Build Almas Remote V2.2
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
         run: gradle --no-daemon :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: ALMAS_REMOTE_V21_HOST_APK
+          name: ALMAS_REMOTE_V22_HOST_APK
           path: almas-remote-build/android-host/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -45,14 +45,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Apply V2.1 client patch
+      - name: Apply V2.1 orientation patch
         working-directory: almas-remote-build/windows-v2
         run: python patch_v21.py
+      - name: Apply V2.2 touchpad fallback patch
+        working-directory: almas-remote-build/windows-v2
+        run: python patch_v22.py
       - name: Publish native Windows client
         working-directory: almas-remote-build/windows-v2
         run: dotnet publish AlmasRemoteV2.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o publish
       - uses: actions/upload-artifact@v4
         with:
-          name: ALMAS_REMOTE_V21_CLIENT_EXE
+          name: ALMAS_REMOTE_V22_CLIENT_EXE
           path: almas-remote-build/windows-v2/publish/Almas Remote V2.exe
           if-no-files-found: error
