@@ -1,0 +1,95 @@
+
+Welcome to Gradle 8.7!
+
+Here are the highlights of this release:
+ - Compiling and testing with Java 22
+ - Cacheable Groovy script compilation
+ - New methods in lazy collection properties
+
+For more details see https://docs.gradle.org/8.7/release-notes.html
+
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.7/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 35
+
+This Android Gradle plugin (8.5.2) was tested up to compileSdk = 34.
+
+You are strongly encouraged to update your project to use a newer
+Android Gradle plugin that has been tested with compileSdk = 35.
+
+If you are already using the latest version of the Android Gradle plugin,
+you may need to wait until a newer version with support for compileSdk = 35 is available.
+
+For more information refer to the compatibility table:
+https://d.android.com/r/tools/api-level-support
+
+To suppress this warning, add/update
+    android.suppressUnsupportedCompileSdk=35
+to this project's gradle.properties.
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:javaPreCompileDebug
+> Task :app:generateDebugResValues
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:mergeDebugShaders
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
+> Task :app:processDebugJavaRes NO-SOURCE
+> Task :app:processDebugManifestForPackage
+> Task :app:mergeDebugJavaResource
+> Task :app:checkDebugDuplicateClasses
+> Task :app:desugarDebugFileDependencies
+> Task :app:mergeDebugStartupProfile
+> Task :app:mergeDebugJniLibFolders
+> Task :app:mergeDebugNativeLibs NO-SOURCE
+> Task :app:mergeExtDexDebug
+> Task :app:mergeLibDexDebug
+> Task :app:stripDebugDebugSymbols NO-SOURCE
+> Task :app:processDebugResources
+> Task :app:validateSigningDebug
+
+> Task :app:compileDebugJavaWithJavac FAILED
+/home/runner/work/tiktok-site/tiktok-site/almas-remote-build/android-host/app/src/main/java/kz/almas/remote/RemoteService.java:95: error: local variables referenced from a lambda expression must be final or effectively final
+                int rowPadding = rowStride - pixelStride * outW;
+                                                           ^
+/home/runner/work/tiktok-site/tiktok-site/almas-remote-build/android-host/app/src/main/java/kz/almas/remote/RemoteService.java:96: error: local variables referenced from a lambda expression must be final or effectively final
+                Bitmap full = Bitmap.createBitmap(outW + rowPadding / pixelStride, outH, Bitmap.Config.ARGB_8888);
+                                                  ^
+/home/runner/work/tiktok-site/tiktok-site/almas-remote-build/android-host/app/src/main/java/kz/almas/remote/RemoteService.java:96: error: local variables referenced from a lambda expression must be final or effectively final
+                Bitmap full = Bitmap.createBitmap(outW + rowPadding / pixelStride, outH, Bitmap.Config.ARGB_8888);
+                                                                                   ^
+/home/runner/work/tiktok-site/tiktok-site/almas-remote-build/android-host/app/src/main/java/kz/almas/remote/RemoteService.java:98: error: local variables referenced from a lambda expression must be final or effectively final
+                Bitmap cropped = Bitmap.createBitmap(full, 0, 0, outW, outH);
+                                                                 ^
+/home/runner/work/tiktok-site/tiktok-site/almas-remote-build/android-host/app/src/main/java/kz/almas/remote/RemoteService.java:98: error: local variables referenced from a lambda expression must be final or effectively final
+                Bitmap cropped = Bitmap.createBitmap(full, 0, 0, outW, outH);
+                                                                       ^
+Note: /home/runner/work/tiktok-site/tiktok-site/almas-remote-build/android-host/app/src/main/java/kz/almas/remote/RemoteService.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+5 errors
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1789194109478.json
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugJavaWithJavac'.
+> Compilation failed; see the compiler error output for details.
+
+* Try:
+> Run with --info option to get more log output.
+> Run with --scan to get full insights.
+
+BUILD FAILED in 26s
+26 actionable tasks: 26 executed
