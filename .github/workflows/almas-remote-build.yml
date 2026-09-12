@@ -1,4 +1,4 @@
-name: Build Almas Remote V2.8.1 Keyboard Fix
+name: Build Almas Remote V2.9 IME Keyboard
 
 on:
   push:
@@ -53,6 +53,9 @@ jobs:
       - name: Apply V2.8.1 cursor reset guard
         working-directory: almas-remote-build/android-host
         run: python patch_v281_keyboard_guard.py
+      - name: Apply V2.9 real IME keyboard backend
+        working-directory: almas-remote-build/android-host
+        run: python patch_v29_ime_keyboard.py
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
@@ -61,7 +64,7 @@ jobs:
         run: gradle --no-daemon :app:assembleRelease
       - uses: actions/upload-artifact@v4
         with:
-          name: ALMAS_REMOTE_V281_KEYBOARD_FIX_HOST_APK
+          name: ALMAS_REMOTE_V29_IME_KEYBOARD_HOST_APK
           path: almas-remote-build/android-host/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
 
