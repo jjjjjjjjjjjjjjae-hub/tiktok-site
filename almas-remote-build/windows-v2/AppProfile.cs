@@ -14,7 +14,7 @@ public sealed class NormPoint
 public sealed class RemoteProfile
 {
     public int SchemaVersion { get; set; } = 2;
-    public Dictionary<string, int> Keys { get; set; } = new();
+    public Dictionary<string, int> KeyBindings { get; set; } = new();
     public Dictionary<string, NormPoint> Targets { get; set; } = new();
     public Dictionary<string, string> Modes { get; set; } = new();
     public float JoystickRadius { get; set; } = 0.10f;
@@ -43,16 +43,16 @@ public sealed class RemoteProfile
     public static RemoteProfile CreateDefault()
     {
         var p = new RemoteProfile();
-        p.Keys["move_up"] = (int)Keys.W;
-        p.Keys["move_down"] = (int)Keys.S;
-        p.Keys["move_left"] = (int)Keys.A;
-        p.Keys["move_right"] = (int)Keys.D;
-        p.Keys["run"] = (int)Keys.ShiftKey;
-        p.Keys["jump"] = (int)Keys.Space;
-        p.Keys["fire"] = 0;
-        p.Keys["aim"] = 0;
-        p.Keys["reload"] = (int)Keys.R;
-        p.Keys["interact"] = (int)Keys.F;
+        p.KeyBindings["move_up"] = (int)System.Windows.Forms.Keys.W;
+        p.KeyBindings["move_down"] = (int)System.Windows.Forms.Keys.S;
+        p.KeyBindings["move_left"] = (int)System.Windows.Forms.Keys.A;
+        p.KeyBindings["move_right"] = (int)System.Windows.Forms.Keys.D;
+        p.KeyBindings["run"] = (int)System.Windows.Forms.Keys.ShiftKey;
+        p.KeyBindings["jump"] = (int)System.Windows.Forms.Keys.Space;
+        p.KeyBindings["fire"] = 0;
+        p.KeyBindings["aim"] = 0;
+        p.KeyBindings["reload"] = (int)System.Windows.Forms.Keys.R;
+        p.KeyBindings["interact"] = (int)System.Windows.Forms.Keys.F;
 
         p.Targets["joystick"] = new NormPoint(0.18f, 0.73f);
         p.Targets["camera"] = new NormPoint(0.72f, 0.50f);
@@ -96,19 +96,19 @@ public sealed class RemoteProfile
         File.Move(tmp, ProfilePath, true);
     }
 
-    public void AssignKey(string action, Keys key)
+    public void AssignKey(string action, System.Windows.Forms.Keys key)
     {
         int v = (int)key;
-        foreach (string a in Keys.Keys.ToList())
+        foreach (string a in KeyBindings.Keys.ToList())
         {
-            if (a != action && Keys[a] == v) Keys[a] = 0;
+            if (a != action && KeyBindings[a] == v) KeyBindings[a] = 0;
         }
-        Keys[action] = v;
+        KeyBindings[action] = v;
     }
 
     public bool IsKeyDownFor(string action, HashSet<int> pressed)
     {
-        return Keys.TryGetValue(action, out int k) && k != 0 && pressed.Contains(k);
+        return KeyBindings.TryGetValue(action, out int k) && k != 0 && pressed.Contains(k);
     }
 
     public NormPoint Target(string action)
@@ -126,7 +126,10 @@ public sealed class RemoteProfile
     private void MergeMissingDefaults()
     {
         var d = CreateDefault();
-        foreach (var kv in d.Keys) if (!Keys.ContainsKey(kv.Key)) Keys[kv.Key] = kv.Value;
+        KeyBindings ??= new Dictionary<string, int>();
+        Targets ??= new Dictionary<string, NormPoint>();
+        Modes ??= new Dictionary<string, string>();
+        foreach (var kv in d.KeyBindings) if (!KeyBindings.ContainsKey(kv.Key)) KeyBindings[kv.Key] = kv.Value;
         foreach (var kv in d.Targets) if (!Targets.ContainsKey(kv.Key)) Targets[kv.Key] = kv.Value;
         foreach (var kv in d.Modes) if (!Modes.ContainsKey(kv.Key)) Modes[kv.Key] = kv.Value;
         if (GamePackages == null || GamePackages.Count == 0) GamePackages = d.GamePackages;
