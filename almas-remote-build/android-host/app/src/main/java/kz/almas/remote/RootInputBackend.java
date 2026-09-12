@@ -13,17 +13,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Persistent root input backend. The native helper owns /dev/uinput and reads a
- * tiny line protocol from stdin. If anything fails, callers can fall back to
- * Accessibility without crashing the service.
- */
+/** Persistent Magisk root backend backed by a virtual /dev/uinput touchscreen. */
 public final class RootInputBackend {
     private static final int AXIS_MAX = 32767;
     private static final Object LOCK = new Object();
     private static Process process;
     private static BufferedWriter writer;
     private static volatile boolean ready;
+    private static String remoteHelperPath;
     private static final Map<String, Integer> slots = new HashMap<>();
 
     static {
@@ -48,11 +45,13 @@ public final class RootInputBackend {
             if (!RootBridge.isRootGranted() || !RootBridge.isUinputAvailable()) return false;
             try {
                 File helper = copyHelper(context);
-                String cmd = "chmod 700 '" + helper.getAbsolutePath().replace("'", "'\\''") + "'; exec '" +
-                        helper.getAbsolutePath().replace("'", "'\\''") + "'";
+                String src = shq(helper.getAbsolutePath());
+                remoteHelperPath = "/data/local/tmp/almas_uinput_" + android.os.Process.myUid();
+                String dst = shq(remoteHelperPath);
+                String cmd = "cp " + src + " " + dst + "; chmod 755 " + dst + "; exec " + dst;
                 process = new ProcessBuilder("su", "-c", cmd).redirectErrorStream(true).start();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(4);
                 String first = null;
                 while (System.nanoTime() < deadline) {
                     if (reader.ready()) {
@@ -93,6 +92,10 @@ public final class RootInputBackend {
         }
     }
 
+    private static String shq(String s) {
+        return "'" + s.replace("'", "'\\''") + "'";
+    }
+
     private static File copyHelper(Context context) throws Exception {
         File out = new File(context.getFilesDir(), "almas_uinput");
         try (InputStream in = context.getAssets().open("almas_uinput");
@@ -102,9 +105,6 @@ public final class RootInputBackend {
             while ((n = in.read(buf)) > 0) fos.write(buf, 0, n);
             fos.flush();
         }
-        // App UID may not be allowed to chmod a root-executed file via Java on every ROM,
-        // so the su command also runs chmod. This is still useful on permissive ROMs.
-        try { out.setReadable(true, true); out.setExecutable(true, true); } catch (Throwable ignored) {}
         return out;
     }
 
@@ -181,5 +181,9 @@ public final class RootInputBackend {
         writer = null;
         try { if (process != null) process.destroy(); } catch (Throwable ignored) {}
         process = null;
+        if (remoteHelperPath != null && RootBridge.isRootGranted()) {
+            try { RootBridge.shellFast("rm -f " + shq(remoteHelperPath)); } catch (Throwable ignored) {}
+        }
+        remoteHelperPath = null;
     }
 }
