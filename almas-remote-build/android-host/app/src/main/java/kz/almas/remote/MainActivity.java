@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.projection.MediaProjectionManager;
@@ -22,6 +23,8 @@ import java.util.Collections;
 
 public class MainActivity extends Activity {
     private static final int CAPTURE_REQUEST = 44;
+    private static final String PREFS = "almas_remote";
+    private static final String KEY_PIN = "pair_pin";
     private TextView status;
     private String pin;
 
@@ -31,7 +34,14 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 200);
         }
-        pin = String.format("%06d", new SecureRandom().nextInt(1_000_000));
+
+        // Keep the pairing PIN stable across Activity recreation/orientation changes.
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        pin = prefs.getString(KEY_PIN, null);
+        if (pin == null || pin.length() != 6) {
+            pin = String.format("%06d", new SecureRandom().nextInt(1_000_000));
+            prefs.edit().putString(KEY_PIN, pin).apply();
+        }
         buildUi();
     }
 
@@ -76,7 +86,7 @@ public class MainActivity extends Activity {
         status.setGravity(Gravity.CENTER);
         root.addView(status, fullWrap());
 
-        TextView warning = text("PIN-ді тек өз ноутбугыңа енгіз. Қосылу тек бір Wi‑Fi/LAN ішінде жасалған.", 14, Color.GRAY);
+        TextView warning = text("PIN енді қолданба қайта ашылса да өзгермейді. PIN-ді тек өз ноутбугыңа енгіз.", 14, Color.GRAY);
         warning.setPadding(0, 12, 0, 0);
         warning.setGravity(Gravity.CENTER);
         root.addView(warning, fullWrap());
@@ -92,12 +102,15 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == CAPTURE_REQUEST && resultCode == RESULT_OK && data != null) {
+            // Stop any stale server instance first so displayed PIN and server PIN always match.
+            stopService(new Intent(this, RemoteService.class));
+
             Intent i = new Intent(this, RemoteService.class);
             i.putExtra("resultCode", resultCode);
             i.putExtra("projectionData", data);
             i.putExtra("pin", pin);
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(i); else startService(i);
-            status.setText("Сервер іске қосылды. Ноутбуктан IP + PIN арқылы қосыл.");
+            status.setText("Сервер іске қосылды. Ноутбуктан осы IP + PIN арқылы қосыл.");
         } else if (requestCode == CAPTURE_REQUEST) {
             status.setText("Экранды бөлісуге рұқсат берілмеді.");
         }
