@@ -1,4 +1,4 @@
-name: Build Almas Remote V2.3
+name: Build Almas Remote V2.4
 
 on:
   push:
@@ -38,6 +38,9 @@ jobs:
       - name: Apply V2.3 Android root/video patch
         working-directory: almas-remote-build/android-host
         run: python patch_v23_android.py
+      - name: Apply V2.4 automatic screen share permission patch
+        working-directory: almas-remote-build/android-host
+        run: python patch_v24_android.py
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
@@ -46,7 +49,7 @@ jobs:
         run: gradle --no-daemon :app:assembleRelease
       - uses: actions/upload-artifact@v4
         with:
-          name: ALMAS_REMOTE_V23_HOST_APK
+          name: ALMAS_REMOTE_V24_HOST_APK
           path: almas-remote-build/android-host/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
 
