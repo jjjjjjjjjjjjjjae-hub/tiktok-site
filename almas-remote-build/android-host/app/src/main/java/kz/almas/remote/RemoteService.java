@@ -13,8 +13,11 @@ import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.WindowManager;
 
 import java.io.BufferedReader;
@@ -34,7 +37,33 @@ public class RemoteService extends Service {
     private MediaProjection projection;
     private VirtualDisplay virtualDisplay;
     private ImageReader reader;
+    private DisplayManager displayManager;
+    private Handler mainHandler;
+    private int captureW;
+    private int captureH;
+    private int captureDensity;
+    private final Object captureLock = new Object();
     private final AtomicReference<byte[]> latestFrame = new AtomicReference<>();
+
+    private boolean orientationSaved;
+    private String savedAccelRotation = "1";
+    private String savedUserRotation = "0";
+    private boolean landscapeForced;
+
+    private final DisplayManager.DisplayListener displayListener = new DisplayManager.DisplayListener() {
+        @Override public void onDisplayAdded(int displayId) {}
+        @Override public void onDisplayRemoved(int displayId) {}
+        @Override public void onDisplayChanged(int displayId) {
+            if (displayId == Display.DEFAULT_DISPLAY && running && mainHandler != null) {
+                mainHandler.removeCallbacks(resizeRunnable);
+                mainHandler.postDelayed(resizeRunnable, 120);
+            }
+        }
+    };
+
+    private final Runnable resizeRunnable = () -> {
+        try { resizeCaptureIfNeeded(); } catch (Throwable ignored) {}
+    };
 
     @Override public IBinder onBind(Intent intent) { return null; }
 
@@ -45,6 +74,7 @@ public class RemoteService extends Service {
         createNotification();
         if (running) return START_STICKY;
         running = true;
+        mainHandler = new Handler(Looper.getMainLooper());
 
         int resultCode = intent.getIntExtra("resultCode", 0);
         Intent data = intent.getParcelableExtra("projectionData");
@@ -52,7 +82,10 @@ public class RemoteService extends Service {
         projection = mgr.getMediaProjection(resultCode, data);
         projection.registerCallback(new MediaProjection.Callback() {
             @Override public void onStop() { stopSelf(); }
-        }, new android.os.Handler(getMainLooper()));
+        }, mainHandler);
+
+        displayManager = (DisplayManager) getSystemService(DISPLAY_SERVICE);
+        displayManager.registerDisplayListener(displayListener, mainHandler);
         startCapture();
         startServers();
         return START_STICKY;
@@ -66,59 +99,112 @@ public class RemoteService extends Service {
         android.app.Notification.Builder b = Build.VERSION.SDK_INT >= 26
                 ? new android.app.Notification.Builder(this, CHANNEL)
                 : new android.app.Notification.Builder(this);
-        b.setContentTitle("Almas Remote Host V2")
+        b.setContentTitle("Almas Remote Host V2.1")
          .setContentText("Экран және басқару LAN арқылы белсенді")
          .setSmallIcon(android.R.drawable.presence_online)
          .setOngoing(true);
         startForeground(77, b.build());
     }
 
-    private void startCapture() {
-        WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+    private DisplayMetrics currentMetrics() {
         DisplayMetrics dm = new DisplayMetrics();
-        wm.getDefaultDisplay().getRealMetrics(dm);
-        int screenW = dm.widthPixels, screenH = dm.heightPixels;
-        int outW = Math.min(screenW, 1280);
-        int outH = Math.max(1, Math.round(screenH * (outW / (float) screenW)));
-        if ((outW & 1) == 1) outW--;
-        if ((outH & 1) == 1) outH--;
-        final int captureW = outW;
-        final int captureH = outH;
+        try {
+            Display d = displayManager != null ? displayManager.getDisplay(Display.DEFAULT_DISPLAY) : null;
+            if (d != null) d.getRealMetrics(dm);
+            else ((WindowManager) getSystemService(WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(dm);
+        } catch (Throwable t) {
+            ((WindowManager) getSystemService(WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(dm);
+        }
+        return dm;
+    }
 
-        reader = ImageReader.newInstance(captureW, captureH, PixelFormat.RGBA_8888, 2);
-        reader.setOnImageAvailableListener(r -> {
+    private int even(int v) {
+        v = Math.max(2, v);
+        return (v & 1) == 0 ? v : v - 1;
+    }
+
+    private int[] outputSize(DisplayMetrics dm) {
+        int sw = Math.max(1, dm.widthPixels);
+        int sh = Math.max(1, dm.heightPixels);
+        float scale = Math.min(1f, 1280f / Math.max(sw, sh));
+        return new int[]{even(Math.round(sw * scale)), even(Math.round(sh * scale))};
+    }
+
+    private ImageReader createReader(final int width, final int height) {
+        ImageReader r = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2);
+        r.setOnImageAvailableListener(src -> {
             Image image = null;
+            Bitmap full = null;
+            Bitmap cropped = null;
             try {
-                image = r.acquireLatestImage();
+                image = src.acquireLatestImage();
                 if (image == null) return;
                 Image.Plane plane = image.getPlanes()[0];
                 ByteBuffer buffer = plane.getBuffer();
                 int pixelStride = plane.getPixelStride();
                 int rowStride = plane.getRowStride();
-                int rowPadding = rowStride - pixelStride * captureW;
-                Bitmap full = Bitmap.createBitmap(captureW + rowPadding / pixelStride, captureH, Bitmap.Config.ARGB_8888);
+                int rowPadding = rowStride - pixelStride * width;
+                int bitmapW = width + Math.max(0, rowPadding / Math.max(1, pixelStride));
+                full = Bitmap.createBitmap(bitmapW, height, Bitmap.Config.ARGB_8888);
                 full.copyPixelsFromBuffer(buffer);
-                Bitmap cropped = Bitmap.createBitmap(full, 0, 0, captureW, captureH);
+                cropped = Bitmap.createBitmap(full, 0, 0, width, height);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream(160_000);
                 cropped.compress(Bitmap.CompressFormat.JPEG, 66, bos);
                 latestFrame.set(bos.toByteArray());
-                cropped.recycle();
-                full.recycle();
             } catch (Throwable ignored) {
             } finally {
-                if (image != null) image.close();
+                if (cropped != null) try { cropped.recycle(); } catch (Throwable ignored) {}
+                if (full != null) try { full.recycle(); } catch (Throwable ignored) {}
+                if (image != null) try { image.close(); } catch (Throwable ignored) {}
             }
         }, null);
+        return r;
+    }
 
+    private void startCapture() {
+        DisplayMetrics dm = currentMetrics();
+        int[] sz = outputSize(dm);
+        captureW = sz[0];
+        captureH = sz[1];
+        captureDensity = dm.densityDpi;
+        reader = createReader(captureW, captureH);
         virtualDisplay = projection.createVirtualDisplay(
-                "AlmasRemoteV2", captureW, captureH, dm.densityDpi,
+                "AlmasRemoteV21", captureW, captureH, captureDensity,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 reader.getSurface(), null, null);
     }
 
+    private void resizeCaptureIfNeeded() {
+        synchronized (captureLock) {
+            if (!running || virtualDisplay == null) return;
+            DisplayMetrics dm = currentMetrics();
+            int[] sz = outputSize(dm);
+            int nw = sz[0], nh = sz[1];
+            if (nw == captureW && nh == captureH && dm.densityDpi == captureDensity) return;
+
+            ImageReader next = createReader(nw, nh);
+            ImageReader old = reader;
+            try {
+                virtualDisplay.resize(nw, nh, dm.densityDpi);
+                virtualDisplay.setSurface(next.getSurface());
+                reader = next;
+                captureW = nw;
+                captureH = nh;
+                captureDensity = dm.densityDpi;
+                latestFrame.set(null);
+                if (old != null) {
+                    old.setOnImageAvailableListener(null, null);
+                    old.close();
+                }
+            } catch (Throwable t) {
+                try { next.close(); } catch (Throwable ignored) {}
+            }
+        }
+    }
+
     private void startServers() {
-        new Thread(this::videoLoop, "video-server-v2").start();
-        new Thread(this::controlLoop, "control-server-v2").start();
+        new Thread(this::videoLoop, "video-server-v21").start();
+        new Thread(this::controlLoop, "control-server-v21").start();
     }
 
     private void videoLoop() {
@@ -158,7 +244,7 @@ public class RemoteService extends Service {
                     BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
                     if (!authorized(in.readLine())) continue;
                     PrintWriter out = new PrintWriter(s.getOutputStream(), true);
-                    out.println("READY 2 " + (RemoteAccessibilityService.isReady() ? "1" : "0"));
+                    out.println("READY 21 " + (RemoteAccessibilityService.isReady() ? "1" : "0"));
 
                     Thread appState = new Thread(() -> {
                         String lastPkg = null;
@@ -183,7 +269,7 @@ public class RemoteService extends Service {
                                 break;
                             }
                         }
-                    }, "app-state-v2");
+                    }, "app-state-v21");
                     appState.setDaemon(true);
                     appState.start();
 
@@ -197,8 +283,10 @@ public class RemoteService extends Service {
                         }
                     }
                     RemoteAccessibilityService.cancelAll();
+                    restoreOrientationIfNeeded();
                 } catch (Exception ignored) {
                     RemoteAccessibilityService.cancelAll();
+                    restoreOrientationIfNeeded();
                 }
             }
         } catch (Exception ignored) {}
@@ -256,10 +344,57 @@ public class RemoteService extends Service {
                 else if (p[1].equals("RECENTS")) RemoteAccessibilityService.globalRecents();
                 return;
             }
+            if (p.length >= 2 && p[0].equals("ORIENT")) {
+                if (p[1].equals("LANDSCAPE")) forceLandscapeRoot();
+                else if (p[1].equals("AUTO")) restoreOrientationIfNeeded();
+                return;
+            }
             if (p.length == 1 && p[0].equals("CANCEL")) {
                 RemoteAccessibilityService.cancelAll();
             }
         } catch (Exception ignored) {}
+    }
+
+    private String shell(String command) {
+        Process p = null;
+        try {
+            p = new ProcessBuilder("su", "-c", command).redirectErrorStream(true).start();
+            BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            StringBuilder b = new StringBuilder();
+            String line;
+            while ((line = r.readLine()) != null) {
+                if (b.length() > 0) b.append('\n');
+                b.append(line);
+            }
+            p.waitFor();
+            return b.toString().trim();
+        } catch (Throwable ignored) {
+            return "";
+        } finally {
+            if (p != null) try { p.destroy(); } catch (Throwable ignored) {}
+        }
+    }
+
+    private synchronized void forceLandscapeRoot() {
+        if (landscapeForced) return;
+        if (!orientationSaved) {
+            String a = shell("settings get system accelerometer_rotation");
+            String u = shell("settings get system user_rotation");
+            if (!a.isEmpty()) savedAccelRotation = a;
+            if (!u.isEmpty()) savedUserRotation = u;
+            orientationSaved = true;
+        }
+        shell("settings put system accelerometer_rotation 0; settings put system user_rotation 1");
+        landscapeForced = true;
+        if (mainHandler != null) mainHandler.postDelayed(resizeRunnable, 250);
+    }
+
+    private synchronized void restoreOrientationIfNeeded() {
+        if (!orientationSaved) return;
+        shell("settings put system accelerometer_rotation " + savedAccelRotation + "; settings put system user_rotation " + savedUserRotation);
+        landscapeForced = false;
+        orientationSaved = false;
+        if (mainHandler != null) mainHandler.postDelayed(resizeRunnable, 250);
     }
 
     private static float f(String s) { return Float.parseFloat(s); }
@@ -269,6 +404,8 @@ public class RemoteService extends Service {
     public void onDestroy() {
         running = false;
         RemoteAccessibilityService.cancelAll();
+        restoreOrientationIfNeeded();
+        try { if (displayManager != null) displayManager.unregisterDisplayListener(displayListener); } catch (Exception ignored) {}
         try { if (virtualDisplay != null) virtualDisplay.release(); } catch (Exception ignored) {}
         try { if (reader != null) reader.close(); } catch (Exception ignored) {}
         try { if (projection != null) projection.stop(); } catch (Exception ignored) {}
