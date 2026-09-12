@@ -1,0 +1,28 @@
+name: Chunk Almas APK Base64
+
+on:
+  push:
+    branches: [almas-remote-build]
+    paths:
+      - '.github/workflows/almas-chunk-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  chunk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: almas-remote-build
+      - name: Split base64 into readable lines
+        shell: bash
+        run: |
+          fold -w 500 almas-remote-build/Almas_Remote_Host.apk.b64 > almas-remote-build/Almas_Remote_Host.apk.b64.lines
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add almas-remote-build/Almas_Remote_Host.apk.b64.lines
+          git commit -m 'Chunk APK base64 for transfer' || true
+          git push origin HEAD:almas-remote-build
