@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -154,6 +155,27 @@ public class RemoteService extends Service {
                     s.setTcpNoDelay(true);
                     BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
                     if (!authorized(in.readLine())) continue;
+                    PrintWriter out = new PrintWriter(s.getOutputStream(), true);
+
+                    Thread appState = new Thread(() -> {
+                        String lastPkg = null;
+                        while (running && !s.isClosed()) {
+                            try {
+                                String pkg = RemoteAccessibilityService.getForegroundPackage();
+                                if (!pkg.equals(lastPkg)) {
+                                    out.println("APP " + pkg);
+                                    if (out.checkError()) break;
+                                    lastPkg = pkg;
+                                }
+                                Thread.sleep(250);
+                            } catch (Exception e) {
+                                break;
+                            }
+                        }
+                    }, "app-state");
+                    appState.setDaemon(true);
+                    appState.start();
+
                     String line;
                     while (running && (line = in.readLine()) != null) handleCommand(line.trim());
                 } catch (Exception ignored) {}
