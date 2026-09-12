@@ -1,4 +1,3 @@
-import base64
 import io
 import json
 import math
@@ -6,6 +5,7 @@ import os
 import queue
 import socket
 import struct
+import sys
 import threading
 import time
 import tkinter as tk
@@ -26,10 +26,7 @@ LABELS = {
     "reload": "Оқтау / Reload",
     "interact": "Әрекет / Interact",
 }
-KEY_ACTIONS = [
-    "move_up", "move_down", "move_left", "move_right",
-    "run", "jump", "fire", "aim", "reload", "interact"
-]
+KEY_ACTIONS = ["move_up", "move_down", "move_left", "move_right", "run", "jump", "fire", "aim", "reload", "interact"]
 KEY_LABELS = {
     "move_up": "Алға",
     "move_down": "Артқа",
@@ -49,8 +46,8 @@ DEFAULT_KEYS = {
     "move_right": "d",
     "run": "shift",
     "jump": "space",
-    "fire": "mouse1",
-    "aim": "mouse3",
+    "fire": "",
+    "aim": "",
     "reload": "r",
     "interact": "f",
 }
@@ -65,17 +62,25 @@ DEFAULT = {
     "interact": [0.62, 0.64],
     "joystick_radius": 0.10,
     "camera_sensitivity": 0.09,
-    "auto_camera_left": True,
+    "auto_camera_turn": True,
     "keys": DEFAULT_KEYS.copy(),
 }
 
-JOYSTICK_IMAGE_B64 = """/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDACgcHiMeGSgjISMtKygwPDY2PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDz/2wBDASEtLS0wPDg4PDg8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDz/wAARCQEPAaQDASIAAhEBAxEB/8QAHQAAAQUBAQEAAAAAAAAAAAAAAAMFBgcECAIBCf/EAEUQAAEDAgMEBgYIBgIDAQAAAAECAwQAEQUSITFBBhMiUWFxgZGhFCMyQlKxwdHwBxVicoKSorLC4SRDk6PSFv/EABoBAAIDAQEAAAAAAAAAAAAAAAABAgMEBAX/xAAxEQACAQMDAgQEBgIDAAAAAAAAAQIDEQQSITEFEyJBUWEUMnGBkaGxwdHhI0Lw/9oADAMBAAIRAxEAPwD8qpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlKUpSlL/2Q=="""
+
+def resource_path(name):
+    base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base, name)
 
 
-def deep_default():
-    d = json.loads(json.dumps(DEFAULT))
-    d["keys"] = DEFAULT_KEYS.copy()
-    return d
+def norm_key(keysym):
+    k = (keysym or "").lower()
+    aliases = {
+        "shift_l": "shift", "shift_r": "shift",
+        "control_l": "ctrl", "control_r": "ctrl",
+        "alt_l": "alt", "alt_r": "alt",
+        "return": "enter", "escape": "esc",
+    }
+    return aliases.get(k, k)
 
 
 class App:
@@ -95,17 +100,44 @@ class App:
         self.current_image = None
         self.current_photo = None
         self.img_rect = (0, 0, 1, 1)
+        self.gear_rect = (0, 0, 0, 0)
         self.running = True
         self.foreground_package = ""
         self.game_mode = False
         self.mouse_start = None
-        self.settings_win = None
-        self.key_value_labels = {}
-        self.joystick_preview_photo = None
+        self.settings = None
+        self.key_vars = {}
+        self.capture_label = None
+        self.joystick_photo = None
         self.build_ui()
         self.bind_inputs()
         root.after(30, self.ui_tick)
         threading.Thread(target=self.movement_loop, daemon=True).start()
+
+    def load_profile(self):
+        out = DEFAULT.copy()
+        out["keys"] = DEFAULT_KEYS.copy()
+        try:
+            with open(PROFILE, "r", encoding="utf-8") as f:
+                old = json.load(f)
+            for k, v in old.items():
+                if k != "keys":
+                    out[k] = v
+            if isinstance(old.get("keys"), dict):
+                out["keys"].update(old["keys"])
+            if "auto_camera_turn" not in old and "auto_camera_left" in old:
+                out["auto_camera_turn"] = bool(old["auto_camera_left"])
+        except Exception:
+            pass
+        return out
+
+    def save_profile(self):
+        try:
+            with open(PROFILE, "w", encoding="utf-8") as f:
+                json.dump(self.profile, f, ensure_ascii=False, indent=2)
+            self.status.set("Настройка сақталды")
+        except Exception as ex:
+            messagebox.showerror(APP, str(ex))
 
     def build_ui(self):
         top = ttk.Frame(self.root, padding=8)
@@ -121,297 +153,450 @@ class App:
         self.status = tk.StringVar(value="Қосылмаған")
         ttk.Label(top, textvariable=self.status).pack(side="left", padx=14)
         self.mode = tk.StringVar(value="MOUSE MODE")
-        ttk.Label(top, textvariable=self.mode, font=("Segoe UI", 10, "bold")).pack(side="right", padx=8)
-        self.canvas = tk.Canvas(self.root, bg="#111111", highlightthickness=0)
+        ttk.Label(top, textvariable=self.mode, font=("Segoe UI", 10, "bold")).pack(side="right", padx=(8, 4))
+        ttk.Button(top, text="⚙ Настройка", command=self.open_settings).pack(side="right", padx=6)
+
+        self.canvas = tk.Canvas(self.root, bg="#101215", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
         self.canvas.bind("<ButtonPress-1>", self.on_mouse_down)
         self.canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
-        self.canvas.bind("<Button-3>", self.on_canvas_right)
+        self.canvas.bind("<ButtonPress-3>", self.on_right_down)
+        self.canvas.bind("<ButtonRelease-3>", self.on_right_up)
         self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
-        self.gear = tk.Button(self.canvas, text="⚙", font=("Segoe UI Symbol", 18), command=self.open_settings, relief="raised", bd=1, width=2, cursor="hand2")
-        self.gear.place_forget()
+
+        bottom = ttk.Frame(self.root, padding=(8, 4, 8, 8))
+        bottom.pack(fill="x")
+        ttk.Label(bottom, text="Тышқан әрқашан жұмыс істейді: click = басу, drag = swipe, wheel = scroll. ⚙ белгісі жоғалмайды.").pack(side="left")
 
     def bind_inputs(self):
         self.root.bind_all("<KeyPress>", self.key_down)
         self.root.bind_all("<KeyRelease>", self.key_up)
 
-    def load_profile(self):
+    def settings_open(self):
         try:
-            with open(PROFILE, "r", encoding="utf-8") as f:
-                p = json.load(f)
-            out = deep_default()
-            for k, v in p.items():
-                if k == "keys" and isinstance(v, dict): out["keys"].update(v)
-                else: out[k] = v
-            return out
+            return self.settings is not None and self.settings.winfo_exists()
         except Exception:
-            return deep_default()
-
-    def save_profile(self):
-        with open(PROFILE, "w", encoding="utf-8") as f:
-            json.dump(self.profile, f, indent=2, ensure_ascii=False)
-        self.status.set("Настройка сақталды")
-
-    def reset_profile(self):
-        self.profile = deep_default()
-        self.refresh_settings_values()
-        self.redraw()
-        self.status.set("Әдепкі настройка қайтарылды")
-
-    def normalize_key(self, keysym):
-        k = (keysym or "").lower()
-        if k in ("shift_l", "shift_r"): return "shift"
-        if k in ("control_l", "control_r"): return "ctrl"
-        if k in ("alt_l", "alt_r"): return "alt"
-        return k
-
-    def display_key(self, key):
-        names = {"space":"Space", "shift":"Shift", "ctrl":"Ctrl", "alt":"Alt", "mouse1":"Mouse Left", "mouse3":"Mouse Right"}
-        if not key: return "—"
-        return names.get(key, key.upper() if len(key) == 1 else key)
+            return False
 
     def open_settings(self):
-        if not self.game_mode: return
-        if self.settings_win and self.settings_win.winfo_exists():
-            self.settings_win.lift(); return
-        win = tk.Toplevel(self.root)
-        self.settings_win = win
-        win.title("Free Fire басқару настройкасы")
-        win.geometry("660x610")
-        win.minsize(620, 560)
-        win.transient(self.root)
-        win.protocol("WM_DELETE_WINDOW", self.close_settings)
-        nb = ttk.Notebook(win); nb.pack(fill="both", expand=True, padx=10, pady=10)
-        keys_tab = ttk.Frame(nb, padding=12); points_tab = ttk.Frame(nb, padding=12); joy_tab = ttk.Frame(nb, padding=12)
-        nb.add(keys_tab, text="Пернелер"); nb.add(points_tab, text="Экран нүктелері"); nb.add(joy_tab, text="Joystick")
-        ttk.Label(keys_tab, text="Әрекетті таңда → пернені бас. Мысалы: «Жүгіру» → A.", wraplength=560).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0,12))
-        self.key_value_labels = {}
-        for i, action in enumerate(KEY_ACTIONS, start=1):
-            ttk.Label(keys_tab, text=KEY_LABELS[action], width=18).grid(row=i, column=0, sticky="w", pady=4)
-            val = ttk.Label(keys_tab, text=self.display_key(self.profile["keys"].get(action,"")), width=16)
-            val.grid(row=i, column=1, sticky="w", padx=8); self.key_value_labels[action] = val
-            ttk.Button(keys_tab, text="Перне тағайындау", command=lambda a=action:self.start_key_capture(a)).grid(row=i,column=2,sticky="ew",pady=4)
-        self.capture_hint = ttk.Label(keys_tab, text=""); self.capture_hint.grid(row=len(KEY_ACTIONS)+1,column=0,columnspan=3,sticky="w",pady=(12,0)); keys_tab.columnconfigure(2,weight=1)
-        ttk.Label(points_tab, text="Ойындағы батырманың экрандағы орнын белгіле. Батырманы басқан соң ойын экранынан нүктені таңда.", wraplength=560).pack(anchor="w",pady=(0,12))
-        for action in TOUCH_ACTIONS:
-            ttk.Button(points_tab, text=f"Орнын қою: {LABELS[action]}", command=lambda a=action:self.begin_point_bind(a)).pack(fill="x",pady=3)
-        ttk.Label(joy_tab, text="Сен жіберген бағыт батырмалары суреті", font=("Segoe UI",11,"bold")).pack(anchor="w")
+        if self.settings_open():
+            self.settings.lift()
+            self.settings.focus_force()
+            return
+        w = tk.Toplevel(self.root)
+        self.settings = w
+        w.title("Almas Remote — Настройка")
+        w.geometry("650x650")
+        w.minsize(560, 520)
+        w.protocol("WM_DELETE_WINDOW", self.close_settings)
+
+        nb = ttk.Notebook(w)
+        nb.pack(fill="both", expand=True, padx=10, pady=10)
+        keys_tab = ttk.Frame(nb, padding=12)
+        points_tab = ttk.Frame(nb, padding=12)
+        joystick_tab = ttk.Frame(nb, padding=12)
+        nb.add(keys_tab, text="Пернелер")
+        nb.add(points_tab, text="Экран нүктелері")
+        nb.add(joystick_tab, text="Joystick / камера")
+
+        ttk.Label(keys_tab, text="Функцияны таңда → 'Перне таңдау' бас → пернетақтадан бір батырма бас.", wraplength=580).pack(anchor="w", pady=(0, 10))
+        self.capture_label = ttk.Label(keys_tab, text="")
+        self.capture_label.pack(anchor="w", pady=(0, 8))
+        self.key_vars = {}
+        grid = ttk.Frame(keys_tab)
+        grid.pack(fill="x")
+        for row, action in enumerate(KEY_ACTIONS):
+            ttk.Label(grid, text=KEY_LABELS[action], width=20).grid(row=row, column=0, sticky="w", pady=4)
+            var = tk.StringVar(value=self.pretty_key(self.profile["keys"].get(action, "")))
+            self.key_vars[action] = var
+            ttk.Label(grid, textvariable=var, width=14, font=("Segoe UI", 10, "bold")).grid(row=row, column=1, sticky="w", padx=8)
+            ttk.Button(grid, text="Перне таңдау", command=lambda a=action: self.begin_key_capture(a)).grid(row=row, column=2, sticky="ew", pady=3)
+        ttk.Label(keys_tab, text="Бір перне тек бір функцияда болады. Жаңа функцияға қойсаң, ескі функциядан автоматты алынады.", wraplength=580).pack(anchor="w", pady=(14, 4))
+
+        ttk.Label(points_tab, text="Алдымен функцияның экрандағы батырмасын көрсет. Батырманы басқан соң настройка жабылады — телефон экранынан қажетті орынды бір рет бас.", wraplength=580).pack(anchor="w", pady=(0, 10))
+        for a in TOUCH_ACTIONS:
+            ttk.Button(points_tab, text=f"Экраннан орнын таңдау: {LABELS[a]}", command=lambda x=a: self.start_point_pick(x)).pack(fill="x", pady=3)
+
         try:
-            raw = base64.b64decode(JOYSTICK_IMAGE_B64); im = Image.open(io.BytesIO(raw)).convert("RGB"); self.joystick_preview_photo = ImageTk.PhotoImage(im)
-            ttk.Label(joy_tab, image=self.joystick_preview_photo).pack(pady=8)
+            img = Image.open(resource_path("joystick.jpg")).convert("RGB")
+            img.thumbnail((300, 180))
+            self.joystick_photo = ImageTk.PhotoImage(img)
+            ttk.Label(joystick_tab, image=self.joystick_photo).pack(pady=(0, 10))
         except Exception:
-            ttk.Label(joy_tab, text="Сурет ашылмады").pack(pady=8)
-        self.auto_cam_var = tk.BooleanVar(value=bool(self.profile.get("auto_camera_left",True)))
-        ttk.Checkbutton(joy_tab,text="Оңға жүргенде камераны автоматты солға бұру",variable=self.auto_cam_var).pack(anchor="w",pady=(8,6))
-        ttk.Label(joy_tab,text="Авто камера күші").pack(anchor="w")
-        self.cam_sens_var = tk.DoubleVar(value=float(self.profile.get("camera_sensitivity",0.09)))
-        ttk.Scale(joy_tab,from_=0.02,to=0.22,variable=self.cam_sens_var,orient="horizontal").pack(fill="x",pady=(0,10))
-        ttk.Label(joy_tab,text="Joystick радиусы").pack(anchor="w")
-        self.joy_radius_var = tk.DoubleVar(value=float(self.profile.get("joystick_radius",0.10)))
-        ttk.Scale(joy_tab,from_=0.03,to=0.22,variable=self.joy_radius_var,orient="horizontal").pack(fill="x")
-        bottom=ttk.Frame(win,padding=(10,0,10,10)); bottom.pack(fill="x")
-        ttk.Button(bottom,text="Әдепкіге қайтару",command=self.reset_profile).pack(side="left")
-        ttk.Button(bottom,text="Бас тарту",command=self.close_settings).pack(side="right",padx=6)
-        ttk.Button(bottom,text="Сақтау",command=self.save_and_close_settings).pack(side="right")
-        win.focus_force()
+            ttk.Label(joystick_tab, text="Joystick суреті табылмады").pack()
+
+        self.auto_cam_var = tk.BooleanVar(value=bool(self.profile.get("auto_camera_turn", True)))
+        ttk.Checkbutton(joystick_tab, text="Joystick оң/солға бұрылғанда камераны автоматты ыңайлау", variable=self.auto_cam_var, command=self.auto_cam_changed).pack(anchor="w", pady=6)
+        ttk.Label(joystick_tab, text="Камера автоматты бұрылу күші").pack(anchor="w", pady=(12, 2))
+        self.cam_sens_var = tk.DoubleVar(value=float(self.profile.get("camera_sensitivity", 0.09)))
+        ttk.Scale(joystick_tab, from_=0.02, to=0.25, variable=self.cam_sens_var, command=self.camera_sens_changed).pack(fill="x")
+        ttk.Label(joystick_tab, text="Joystick радиусы").pack(anchor="w", pady=(16, 2))
+        self.radius_var = tk.DoubleVar(value=float(self.profile.get("joystick_radius", 0.10)))
+        ttk.Scale(joystick_tab, from_=0.03, to=0.22, variable=self.radius_var, command=self.radius_changed).pack(fill="x")
+        ttk.Label(joystick_tab, text="Оңға жүргенде joystick оңға кетеді, ал камера белгіленген аймақта автоматты солға сырғиды. Солға жүргенде керісінше.", wraplength=580).pack(anchor="w", pady=14)
+
+        footer = ttk.Frame(w, padding=(10, 0, 10, 10))
+        footer.pack(fill="x")
+        ttk.Button(footer, text="Сақтау", command=self.save_profile).pack(side="right", padx=4)
+        ttk.Button(footer, text="Жабу", command=self.close_settings).pack(side="right")
 
     def close_settings(self):
-        self.capture_action=None
-        if self.settings_win and self.settings_win.winfo_exists(): self.settings_win.destroy()
-        self.settings_win=None
+        self.capture_action = None
+        try:
+            if self.settings is not None:
+                self.settings.destroy()
+        except Exception:
+            pass
+        self.settings = None
+        self.root.focus_force()
 
-    def save_and_close_settings(self):
-        if hasattr(self,"auto_cam_var"): self.profile["auto_camera_left"]=bool(self.auto_cam_var.get())
-        if hasattr(self,"cam_sens_var"): self.profile["camera_sensitivity"]=float(self.cam_sens_var.get())
-        if hasattr(self,"joy_radius_var"): self.profile["joystick_radius"]=float(self.joy_radius_var.get())
-        self.save_profile(); self.close_settings()
+    def pretty_key(self, k):
+        return k.upper() if k else "—"
 
-    def refresh_settings_values(self):
-        for action,widget in self.key_value_labels.items():
-            try: widget.config(text=self.display_key(self.profile["keys"].get(action,"")))
-            except Exception: pass
-        if hasattr(self,"auto_cam_var"): self.auto_cam_var.set(bool(self.profile.get("auto_camera_left",True)))
-        if hasattr(self,"cam_sens_var"): self.cam_sens_var.set(float(self.profile.get("camera_sensitivity",0.09)))
-        if hasattr(self,"joy_radius_var"): self.joy_radius_var.set(float(self.profile.get("joystick_radius",0.10)))
+    def refresh_key_vars(self):
+        for a, var in self.key_vars.items():
+            var.set(self.pretty_key(self.profile["keys"].get(a, "")))
 
-    def start_key_capture(self,action):
-        self.capture_action=action
-        if hasattr(self,"capture_hint"): self.capture_hint.config(text=f"{KEY_LABELS[action]} үшін енді пернені бас...")
-        try: self.settings_win.focus_force()
-        except Exception: pass
+    def begin_key_capture(self, action):
+        self.capture_action = action
+        if self.capture_label:
+            self.capture_label.config(text=f"{KEY_LABELS[action]} үшін пернені қазір бас...")
+        if self.settings_open():
+            self.settings.focus_force()
 
-    def assign_key(self,action,key):
-        keys=self.profile.setdefault("keys",DEFAULT_KEYS.copy())
-        for other,existing in list(keys.items()):
-            if other!=action and existing==key: keys[other]=""
-        keys[action]=key; self.capture_action=None; self.refresh_settings_values()
-        if hasattr(self,"capture_hint"): self.capture_hint.config(text=f"{KEY_LABELS[action]} = {self.display_key(key)}")
+    def assign_key(self, action, key):
+        keys = self.profile.setdefault("keys", DEFAULT_KEYS.copy())
+        for a in KEY_ACTIONS:
+            if a != action and keys.get(a) == key:
+                keys[a] = ""
+        keys[action] = key
+        self.refresh_key_vars()
+        self.save_profile()
+        if self.capture_label:
+            self.capture_label.config(text=f"{KEY_LABELS[action]} = {self.pretty_key(key)} сақталды")
 
-    def begin_point_bind(self,action):
-        self.bind_mode=action; self.capture_action=None; self.close_settings(); self.status.set(f"{LABELS[action]}: ойын экранынан орнын бас")
+    def start_point_pick(self, action):
+        self.bind_mode = action
+        self.status.set(f"{LABELS[action]} орнын телефон экранынан бас")
+        self.close_settings()
+        self.redraw()
 
-    def on_mouse_down(self,e):
-        n=self.canvas_to_normalized(e.x,e.y)
-        if n:self.mouse_start=(n,time.time())
+    def auto_cam_changed(self):
+        self.profile["auto_camera_turn"] = bool(self.auto_cam_var.get())
+        self.save_profile()
 
-    def on_mouse_up(self,e):
-        end=self.canvas_to_normalized(e.x,e.y); start_info=self.mouse_start; self.mouse_start=None
-        if not end or not start_info:return
-        start,t0=start_info
+    def camera_sens_changed(self, _=None):
+        self.profile["camera_sensitivity"] = float(self.cam_sens_var.get())
+
+    def radius_changed(self, _=None):
+        self.profile["joystick_radius"] = float(self.radius_var.get())
+
+    def in_gear(self, x, y):
+        x1, y1, x2, y2 = self.gear_rect
+        return x1 <= x <= x2 and y1 <= y <= y2
+
+    def on_mouse_down(self, e):
+        if self.in_gear(e.x, e.y):
+            self.mouse_start = None
+            self.open_settings()
+            return
+        n = self.canvas_to_normalized(e.x, e.y)
+        if n:
+            self.mouse_start = (n, time.time())
+
+    def on_mouse_up(self, e):
+        if self.in_gear(e.x, e.y):
+            return
+        end = self.canvas_to_normalized(e.x, e.y)
+        start_info = self.mouse_start
+        self.mouse_start = None
+        if not end or not start_info:
+            return
         if self.bind_mode:
-            self.profile[self.bind_mode]=[end[0],end[1]]; self.status.set(f"{LABELS[self.bind_mode]} орны қойылды"); self.bind_mode=None; self.save_profile(); self.redraw(); return
-        dx=end[0]-start[0]; dy=end[1]-start[1]; dist=math.hypot(dx,dy)
-        if self.game_mode:
-            if self.profile["keys"].get("fire")=="mouse1": self.tap_action("fire")
-            else:self.send(f"TAP {end[0]:.5f} {end[1]:.5f}")
+            self.profile[self.bind_mode] = [end[0], end[1]]
+            self.status.set(f"{LABELS[self.bind_mode]} орны сақталды")
+            self.bind_mode = None
+            self.save_profile()
+            self.redraw()
             return
-        if dist>0.012:
-            dur=max(90,min(650,int((time.time()-t0)*1000))); self.send(f"SWIPE {start[0]:.5f} {start[1]:.5f} {end[0]:.5f} {end[1]:.5f} {dur}")
-        else:self.send(f"TAP {end[0]:.5f} {end[1]:.5f}")
+        start, t0 = start_info
+        dx, dy = end[0] - start[0], end[1] - start[1]
+        dist = math.hypot(dx, dy)
+        if dist > 0.012:
+            dur = max(90, min(700, int((time.time() - t0) * 1000)))
+            self.send(f"SWIPE {start[0]:.5f} {start[1]:.5f} {end[0]:.5f} {end[1]:.5f} {dur}")
+        else:
+            self.send(f"TAP {end[0]:.5f} {end[1]:.5f}")
 
-    def on_canvas_right(self,e):
-        n=self.canvas_to_normalized(e.x,e.y)
-        if not n or self.bind_mode:return
-        if self.game_mode:
-            if self.profile["keys"].get("aim")=="mouse3":self.tap_action("aim")
-        else:self.send(f"TAP {n[0]:.5f} {n[1]:.5f}")
+    def on_right_down(self, e):
+        n = self.canvas_to_normalized(e.x, e.y)
+        if n:
+            self.right_start = (n, time.time())
 
-    def on_mouse_wheel(self,e):
-        if self.game_mode:return
-        c=self.canvas_to_normalized(e.x,e.y)
-        if not c:return
-        amount=-0.22 if e.delta>0 else 0.22; y2=max(0.05,min(0.95,c[1]+amount)); self.send(f"SWIPE {c[0]:.5f} {c[1]:.5f} {c[0]:.5f} {y2:.5f} 180")
+    def on_right_up(self, e):
+        n = self.canvas_to_normalized(e.x, e.y)
+        if not n:
+            return
+        self.send(f"TAP {n[0]:.5f} {n[1]:.5f}")
 
-    def key_down(self,e):
-        k=self.normalize_key(e.keysym)
+    def on_mouse_wheel(self, e):
+        c = self.canvas_to_normalized(e.x, e.y)
+        if not c:
+            return
+        amount = -0.24 if e.delta > 0 else 0.24
+        y2 = max(0.05, min(0.95, c[1] + amount))
+        self.send(f"SWIPE {c[0]:.5f} {c[1]:.5f} {c[0]:.5f} {y2:.5f} 180")
+
+    def key_down(self, e):
+        k = norm_key(e.keysym)
+        if not k:
+            return
         if self.capture_action:
-            if k=="escape":
-                self.capture_action=None
-                if hasattr(self,"capture_hint"):self.capture_hint.config(text="Перне тағайындау тоқтатылды")
-            else:self.assign_key(self.capture_action,k)
+            action = self.capture_action
+            self.capture_action = None
+            self.assign_key(action, k)
+            return "break"
+        if self.settings_open():
             return
-        if k in self.pressed:return
+        if k in self.pressed:
+            return
         self.pressed.add(k)
-        if not self.game_mode:return
-        keys=self.profile.get("keys",DEFAULT_KEYS)
-        for action in ("run","jump","fire","aim","reload","interact"):
-            if keys.get(action)==k:self.tap_action(action);break
+        if not self.game_mode:
+            return
+        action = self.action_for_key(k)
+        if action in ("run", "jump", "fire", "aim", "reload", "interact"):
+            self.tap_action(action)
 
-    def key_up(self,e):self.pressed.discard(self.normalize_key(e.keysym))
-    def tap_action(self,name):
-        if not self.game_mode:return
-        p=self.profile.get(name)
-        if p:self.send(f"TAP {p[0]:.5f} {p[1]:.5f}")
-    def key_is_down(self,action):
-        key=self.profile.get("keys",DEFAULT_KEYS).get(action,""); return bool(key and key in self.pressed)
+    def key_up(self, e):
+        self.pressed.discard(norm_key(e.keysym))
+
+    def action_for_key(self, key):
+        for action, bound in self.profile.get("keys", {}).items():
+            if bound == key:
+                return action
+        return None
+
+    def key_active(self, action):
+        k = self.profile.get("keys", {}).get(action, "")
+        return bool(k and k in self.pressed)
+
+    def tap_action(self, name):
+        p = self.profile.get(name)
+        if p:
+            self.send(f"TAP {p[0]:.5f} {p[1]:.5f}")
 
     def movement_loop(self):
         while self.running:
-            if self.game_mode and self.connected:
-                dx=(1 if self.key_is_down("move_right") else 0)-(1 if self.key_is_down("move_left") else 0)
-                dy=(1 if self.key_is_down("move_down") else 0)-(1 if self.key_is_down("move_up") else 0)
-                if dx or dy:
-                    mag=math.hypot(dx,dy); dx/=mag; dy/=mag; c=self.profile.get("joystick",[0.18,0.73]); r=float(self.profile.get("joystick_radius",0.10)); x2=max(0,min(1,c[0]+dx*r)); y2=max(0,min(1,c[1]+dy*r))
-                    if dx>0.15 and bool(self.profile.get("auto_camera_left",True)):
-                        cam=self.profile.get("camera",[0.72,0.50]); sens=float(self.profile.get("camera_sensitivity",0.09)); cx2=max(0.05,min(0.95,cam[0]-sens))
-                        self.send(f"DUALSWIPE {c[0]:.5f} {c[1]:.5f} {x2:.5f} {y2:.5f} {cam[0]:.5f} {cam[1]:.5f} {cx2:.5f} {cam[1]:.5f} 165")
-                    else:self.send(f"SWIPE {c[0]:.5f} {c[1]:.5f} {x2:.5f} {y2:.5f} 165")
+            try:
+                dx = (1 if self.key_active("move_right") else 0) - (1 if self.key_active("move_left") else 0)
+                dy = (1 if self.key_active("move_down") else 0) - (1 if self.key_active("move_up") else 0)
+                if self.connected and self.game_mode and (dx or dy):
+                    mag = math.hypot(dx, dy)
+                    dxn, dyn = dx / mag, dy / mag
+                    joy = self.profile.get("joystick", [0.18, 0.73])
+                    r = float(self.profile.get("joystick_radius", 0.10))
+                    jx = max(0.01, min(0.99, joy[0] + dxn * r))
+                    jy = max(0.01, min(0.99, joy[1] + dyn * r))
+                    auto = bool(self.profile.get("auto_camera_turn", True))
+                    cam = self.profile.get("camera", [0.72, 0.50])
+                    if auto and dx != 0 and cam:
+                        sens = float(self.profile.get("camera_sensitivity", 0.09))
+                        # Joystick оңға -> камера солға, joystick солға -> камера оңға.
+                        cx2 = max(0.03, min(0.97, cam[0] - (1 if dx > 0 else -1) * sens))
+                        cy2 = cam[1]
+                        self.send(f"DUALSWIPE {joy[0]:.5f} {joy[1]:.5f} {jx:.5f} {jy:.5f} {cam[0]:.5f} {cam[1]:.5f} {cx2:.5f} {cy2:.5f} 170")
+                    else:
+                        self.send(f"SWIPE {joy[0]:.5f} {joy[1]:.5f} {jx:.5f} {jy:.5f} 170")
                     time.sleep(0.15)
-                else:time.sleep(0.035)
-            else:time.sleep(0.05)
+                else:
+                    time.sleep(0.035)
+            except Exception:
+                time.sleep(0.1)
 
     def toggle_connect(self):
-        if self.connected:self.disconnect();return
-        ip=self.ip.get().strip(); pin=self.pin.get().strip()
-        if not ip or len(pin)!=6:messagebox.showwarning(APP,"Телефон IP және 6 санды PIN енгіз.");return
-        self.status.set("Қосылып жатыр...");threading.Thread(target=self.connect_worker,args=(ip,pin),daemon=True).start()
+        if self.connected:
+            self.disconnect()
+            return
+        ip = self.ip.get().strip()
+        pin = self.pin.get().strip()
+        if not ip or len(pin) != 6 or not pin.isdigit():
+            messagebox.showwarning(APP, "Телефон IP және 6 санды PIN енгіз.")
+            return
+        self.status.set("Қосылып жатыр...")
+        threading.Thread(target=self.connect_worker, args=(ip, pin), daemon=True).start()
 
-    def connect_worker(self,ip,pin):
+    def connect_worker(self, ip, pin):
         try:
-            vs=socket.create_connection((ip,5050),timeout=5);vs.settimeout(None);vs.sendall(f"PIN {pin}\n".encode())
-            cs=socket.create_connection((ip,5051),timeout=5);cs.settimeout(None);cs.sendall(f"PIN {pin}\n".encode())
-            self.video_sock,self.ctrl_sock=vs,cs;self.connected=True;self.root.after(0,lambda:(self.status.set("Қосылды"),self.btn_connect.config(text="Ажырату")));threading.Thread(target=self.control_status_loop,args=(cs,),daemon=True).start();self.video_loop(vs)
-        except Exception as ex:self.root.after(0,lambda e=str(ex):self.status.set("Қате: "+e));self.disconnect(silent=True)
+            vs = socket.create_connection((ip, 5050), timeout=5)
+            vs.settimeout(None)
+            vs.sendall(f"PIN {pin}\n".encode())
+            cs = socket.create_connection((ip, 5051), timeout=5)
+            cs.settimeout(None)
+            cs.sendall(f"PIN {pin}\n".encode())
+            self.video_sock, self.ctrl_sock = vs, cs
+            self.connected = True
+            self.root.after(0, lambda: (self.status.set("Қосылды"), self.btn_connect.config(text="Ажырату")))
+            threading.Thread(target=self.control_status_loop, args=(cs,), daemon=True).start()
+            self.video_loop(vs)
+        except Exception as ex:
+            self.root.after(0, lambda e=str(ex): self.status.set("Қате: " + e))
+            self.disconnect(silent=True)
 
-    def control_status_loop(self,s):
+    def control_status_loop(self, s):
         try:
-            f=s.makefile("r",encoding="utf-8",newline="\n")
+            f = s.makefile("r", encoding="utf-8", newline="\n")
             while self.connected:
-                line=f.readline()
-                if not line:break
-                line=line.strip()
+                line = f.readline()
+                if not line:
+                    break
+                line = line.strip()
                 if line.startswith("APP "):
-                    pkg=line[4:].strip();self.foreground_package=pkg;active=self.is_game_package(pkg)
-                    if active!=self.game_mode:self.game_mode=active;self.pressed.clear();self.root.after(0,self.update_mode_ui)
-        except Exception:pass
+                    pkg = line[4:].strip()
+                    self.foreground_package = pkg
+                    active = self.is_game_package(pkg)
+                    if active != self.game_mode:
+                        self.game_mode = active
+                        self.pressed.clear()
+                        self.root.after(0, self.update_mode_ui)
+        except Exception:
+            pass
 
-    def is_game_package(self,pkg):
-        p=(pkg or "").lower();return "freefire" in p or p in ("com.dts.freefireth","com.dts.freefiremax")
+    def is_game_package(self, pkg):
+        p = (pkg or "").lower()
+        return "freefire" in p or p in ("com.dts.freefireth", "com.dts.freefiremax")
+
     def update_mode_ui(self):
         if self.game_mode:
-            self.mode.set("🎮 GAME MODE — Free Fire");self.status.set("Free Fire анықталды");self.gear.place(relx=1.0,x=-14,y=14,anchor="ne")
+            self.mode.set("🎮 GAME MODE — Free Fire")
+            self.status.set("Free Fire: пернетақта mapping қосылды, тышқан да жұмыс істейді")
         else:
-            self.mode.set("🖱 MOUSE MODE");self.gear.place_forget();self.bind_mode=None;self.close_settings()
-            if self.connected:self.status.set("Тышқан режимі: click / drag / wheel")
+            self.mode.set("🖱 MOUSE MODE")
+            if self.connected:
+                self.status.set("Тышқан режимі. ⚙ настройка әрқашан қолжетімді")
         self.redraw()
 
-    def recv_exact(self,s,n):
-        out=bytearray()
-        while len(out)<n:
-            b=s.recv(n-len(out))
-            if not b:raise ConnectionError("Байланыс үзілді")
+    def recv_exact(self, s, n):
+        out = bytearray()
+        while len(out) < n:
+            b = s.recv(n - len(out))
+            if not b:
+                raise ConnectionError("Байланыс үзілді")
             out.extend(b)
         return bytes(out)
-    def video_loop(self,s):
+
+    def video_loop(self, s):
         try:
             while self.connected:
-                size=struct.unpack(">I",self.recv_exact(s,4))[0]
-                if size<=0 or size>10000000:raise ValueError("Bad frame")
-                img=Image.open(io.BytesIO(self.recv_exact(s,size))).convert("RGB")
+                size = struct.unpack(">I", self.recv_exact(s, 4))[0]
+                if size <= 0 or size > 10000000:
+                    raise ValueError("Bad frame")
+                img = Image.open(io.BytesIO(self.recv_exact(s, size))).convert("RGB")
                 if self.frames.full():
-                    try:self.frames.get_nowait()
-                    except queue.Empty:pass
+                    try:
+                        self.frames.get_nowait()
+                    except queue.Empty:
+                        pass
                 self.frames.put(img)
         except Exception as ex:
-            if self.connected:self.root.after(0,lambda e=str(ex):self.status.set("Видео тоқтады: "+e))
-        finally:self.disconnect(silent=True)
-    def disconnect(self,silent=False):
-        self.connected=False;self.game_mode=False;self.pressed.clear();self.bind_mode=None;self.close_settings()
-        for s in (self.video_sock,self.ctrl_sock):
+            if self.connected:
+                self.root.after(0, lambda e=str(ex): self.status.set("Видео тоқтады: " + e))
+        finally:
+            self.disconnect(silent=True)
+
+    def disconnect(self, silent=False):
+        self.connected = False
+        self.game_mode = False
+        self.pressed.clear()
+        for s in (self.video_sock, self.ctrl_sock):
             try:
-                if s:s.close()
-            except Exception:pass
-        self.video_sock=self.ctrl_sock=None
-        try:self.root.after(0,lambda:self.mode.set("MOUSE MODE"));self.root.after(0,self.gear.place_forget)
-        except Exception:pass
-        if not silent:self.status.set("Қосылмаған")
-        try:self.btn_connect.config(text="Қосылу")
-        except Exception:pass
-    def send(self,command):
-        s=self.ctrl_sock
-        if not self.connected or not s:return
-        try:s.sendall((command+"\n").encode())
-        except Exception:self.disconnect()
+                if s:
+                    s.close()
+            except Exception:
+                pass
+        self.video_sock = self.ctrl_sock = None
+        try:
+            self.root.after(0, lambda: self.mode.set("MOUSE MODE"))
+            self.btn_connect.config(text="Қосылу")
+        except Exception:
+            pass
+        if not silent:
+            self.status.set("Қосылмаған")
+
+    def send(self, command):
+        s = self.ctrl_sock
+        if not self.connected or not s:
+            return
+        try:
+            s.sendall((command + "\n").encode())
+        except Exception:
+            self.disconnect()
+
     def ui_tick(self):
         try:
-            while True:self.current_image=self.frames.get_nowait()
-        except queue.Empty:pass
-        if self.current_image is not None:self.redraw()
-        self.root.after(40,self.ui_tick)
+            while True:
+                self.current_image = self.frames.get_nowait()
+        except queue.Empty:
+            pass
+        if self.current_image is not None:
+            self.redraw()
+        else:
+            self.draw_empty()
+        self.root.after(40, self.ui_tick)
+
+    def draw_empty(self):
+        cw = max(2, self.canvas.winfo_width())
+        ch = max(2, self.canvas.winfo_height())
+        self.canvas.delete("all")
+        self.canvas.create_text(cw / 2, ch / 2, text="Телефонға қосылғаннан кейін экран осында шығады", fill="white", font=("Segoe UI", 16))
+        self.draw_gear(cw - 54, 12)
+
+    def draw_gear(self, gx, gy):
+        self.gear_rect = (gx, gy, gx + 42, gy + 42)
+        self.canvas.create_rectangle(gx, gy, gx + 42, gy + 42, fill="#20242a", outline="white", width=1)
+        self.canvas.create_text(gx + 21, gy + 21, text="⚙", fill="white", font=("Segoe UI Symbol", 19))
+
     def redraw(self):
-        if self.current_image is None:return
-        cw=max(2,self.canvas.winfo_width());ch=max(2,self.canvas.winfo_height());iw,ih=self.current_image.size;scale=min(cw/iw,ch/ih);rw,rh=max(1,int(iw*scale)),max(1,int(ih*scale));x=(cw-rw)//2;y=(ch-rh)//2
-        disp=self.current_image.resize((rw,rh),Image.Resampling.BILINEAR);self.current_photo=ImageTk.PhotoImage(disp);self.canvas.delete("all");self.canvas.create_image(x,y,anchor="nw",image=self.current_photo);self.img_rect=(x,y,rw,rh)
+        if self.current_image is None:
+            return
+        cw = max(2, self.canvas.winfo_width())
+        ch = max(2, self.canvas.winfo_height())
+        iw, ih = self.current_image.size
+        scale = min(cw / iw, ch / ih)
+        rw, rh = max(1, int(iw * scale)), max(1, int(ih * scale))
+        x, y = (cw - rw) // 2, (ch - rh) // 2
+        disp = self.current_image.resize((rw, rh), Image.Resampling.BILINEAR)
+        self.current_photo = ImageTk.PhotoImage(disp)
+        self.canvas.delete("all")
+        self.canvas.create_image(x, y, anchor="nw", image=self.current_photo)
+        self.img_rect = (x, y, rw, rh)
+        self.draw_gear(x + rw - 52, y + 10)
         if self.bind_mode:
             for a in TOUCH_ACTIONS:
-                p=self.profile.get(a)
-                if not p:continue
-                px=x+p[0]*rw;py=y+p[1]*rh;self.canvas.create_oval(px-7,py-7,px+7,py+7,outline="white",width=2);self.canvas.create_text(px+10,py-10,text=LABELS[a],anchor="sw",fill="white")
-    def canvas_to_normalized(self,x,y):
-        ix,iy,rw,rh=self.img_rect
-        if x<ix or y<iy or x>ix+rw or y>iy+rh:return None
-        return ((x-ix)/rw,(y-iy)/rh)
-    def close(self):self.running=False;self.disconnect(silent=True);self.root.destroy()
+                p = self.profile.get(a)
+                if not p:
+                    continue
+                px, py = x + p[0] * rw, y + p[1] * rh
+                self.canvas.create_oval(px - 7, py - 7, px + 7, py + 7, outline="white", width=2)
+                self.canvas.create_text(px + 10, py - 10, text=LABELS[a], anchor="sw", fill="white")
 
-if __name__=="__main__":
-    root=tk.Tk();app=App(root);root.protocol("WM_DELETE_WINDOW",app.close);root.mainloop()
+    def canvas_to_normalized(self, x, y):
+        ix, iy, rw, rh = self.img_rect
+        if x < ix or y < iy or x > ix + rw or y > iy + rh:
+            return None
+        return ((x - ix) / rw, (y - iy) / rh)
+
+    def close(self):
+        self.running = False
+        self.disconnect(silent=True)
+        self.root.destroy()
+
+
+def main():
+    root = tk.Tk()
+    app = App(root)
+    root.protocol("WM_DELETE_WINDOW", app.close)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
