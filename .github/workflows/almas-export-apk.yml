@@ -29,17 +29,17 @@ jobs:
       - name: Build APK
         working-directory: almas-remote-build/android-host
         run: gradle --no-daemon :app:assembleDebug
-      - name: Export APK as compressed chunked text
+      - name: Publish APK and checksums
         shell: bash
         run: |
           APK=almas-remote-build/android-host/app/build/outputs/apk/debug/app-debug.apk
-          gzip -9 -c "$APK" > almas-remote-build/Almas_Remote_Host.apk.gz
-          base64 -w0 almas-remote-build/Almas_Remote_Host.apk.gz > almas-remote-build/Almas_Remote_Host.apk.gz.b64
-          fold -w 500 almas-remote-build/Almas_Remote_Host.apk.gz.b64 > almas-remote-build/Almas_Remote_Host.apk.gz.b64.lines
-          sha256sum "$APK" > almas-remote-build/Almas_Remote_Host.apk.sha256.txt
-          sha256sum almas-remote-build/Almas_Remote_Host.apk.gz > almas-remote-build/Almas_Remote_Host.apk.gz.sha256.txt
+          cp "$APK" almas-remote-build/Almas_Remote_Host_GAME_MODE.apk
+          gzip -9 -c "$APK" > almas-remote-build/Almas_Remote_Host_GAME_MODE.apk.gz
+          base64 -w0 almas-remote-build/Almas_Remote_Host_GAME_MODE.apk.gz > almas-remote-build/Almas_Remote_Host_GAME_MODE.apk.gz.b64
+          fold -w 500 almas-remote-build/Almas_Remote_Host_GAME_MODE.apk.gz.b64 > almas-remote-build/Almas_Remote_Host_GAME_MODE.apk.gz.b64.lines
+          sha256sum "$APK" > almas-remote-build/Almas_Remote_Host_GAME_MODE.apk.sha256.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add almas-remote-build/Almas_Remote_Host.apk.gz.b64 almas-remote-build/Almas_Remote_Host.apk.gz.b64.lines almas-remote-build/Almas_Remote_Host.apk.sha256.txt almas-remote-build/Almas_Remote_Host.apk.gz.sha256.txt
-          git commit -m 'Export compressed Almas Remote APK' || true
+          git add almas-remote-build/Almas_Remote_Host_GAME_MODE.apk almas-remote-build/Almas_Remote_Host_GAME_MODE.apk.gz.b64 almas-remote-build/Almas_Remote_Host_GAME_MODE.apk.gz.b64.lines almas-remote-build/Almas_Remote_Host_GAME_MODE.apk.sha256.txt
+          git commit -m 'Publish Almas Remote game mode APK' || true
           git push origin HEAD:almas-remote-build
