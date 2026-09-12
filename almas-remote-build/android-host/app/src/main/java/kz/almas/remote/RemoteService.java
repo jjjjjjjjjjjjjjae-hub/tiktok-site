@@ -81,8 +81,10 @@ public class RemoteService extends Service {
         int outH = Math.max(1, Math.round(screenH * (outW / (float) screenW)));
         if ((outW & 1) == 1) outW--;
         if ((outH & 1) == 1) outH--;
+        final int captureW = outW;
+        final int captureH = outH;
 
-        reader = ImageReader.newInstance(outW, outH, PixelFormat.RGBA_8888, 2);
+        reader = ImageReader.newInstance(captureW, captureH, PixelFormat.RGBA_8888, 2);
         reader.setOnImageAvailableListener(r -> {
             Image image = null;
             try {
@@ -92,10 +94,10 @@ public class RemoteService extends Service {
                 ByteBuffer buffer = plane.getBuffer();
                 int pixelStride = plane.getPixelStride();
                 int rowStride = plane.getRowStride();
-                int rowPadding = rowStride - pixelStride * outW;
-                Bitmap full = Bitmap.createBitmap(outW + rowPadding / pixelStride, outH, Bitmap.Config.ARGB_8888);
+                int rowPadding = rowStride - pixelStride * captureW;
+                Bitmap full = Bitmap.createBitmap(captureW + rowPadding / pixelStride, captureH, Bitmap.Config.ARGB_8888);
                 full.copyPixelsFromBuffer(buffer);
-                Bitmap cropped = Bitmap.createBitmap(full, 0, 0, outW, outH);
+                Bitmap cropped = Bitmap.createBitmap(full, 0, 0, captureW, captureH);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream(150_000);
                 cropped.compress(Bitmap.CompressFormat.JPEG, 62, bos);
                 latestFrame.set(bos.toByteArray());
@@ -108,7 +110,7 @@ public class RemoteService extends Service {
         }, null);
 
         virtualDisplay = projection.createVirtualDisplay(
-                "AlmasRemote", outW, outH, dm.densityDpi,
+                "AlmasRemote", captureW, captureH, dm.densityDpi,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 reader.getSurface(), null, null);
     }
