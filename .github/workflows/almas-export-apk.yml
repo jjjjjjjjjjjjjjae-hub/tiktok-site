@@ -29,13 +29,14 @@ jobs:
       - name: Build APK
         working-directory: almas-remote-build/android-host
         run: gradle --no-daemon :app:assembleDebug
-      - name: Export APK as text
+      - name: Export APK as chunked text
         shell: bash
         run: |
           base64 -w0 almas-remote-build/android-host/app/build/outputs/apk/debug/app-debug.apk > almas-remote-build/Almas_Remote_Host.apk.b64
+          fold -w 500 almas-remote-build/Almas_Remote_Host.apk.b64 > almas-remote-build/Almas_Remote_Host.apk.b64.lines
           sha256sum almas-remote-build/android-host/app/build/outputs/apk/debug/app-debug.apk > almas-remote-build/Almas_Remote_Host.apk.sha256.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add almas-remote-build/Almas_Remote_Host.apk.b64 almas-remote-build/Almas_Remote_Host.apk.sha256.txt
-          git commit -m 'Export built Almas Remote APK' || true
+          git add almas-remote-build/Almas_Remote_Host.apk.b64 almas-remote-build/Almas_Remote_Host.apk.b64.lines almas-remote-build/Almas_Remote_Host.apk.sha256.txt
+          git commit -m 'Export chunked Almas Remote APK' || true
           git push origin HEAD:almas-remote-build
