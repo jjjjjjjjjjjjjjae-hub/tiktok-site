@@ -63,6 +63,7 @@ DEFAULT = {
     "joystick_radius": 0.10,
     "camera_sensitivity": 0.09,
     "auto_camera_turn": True,
+    "mapping_enabled": True,
     "keys": DEFAULT_KEYS.copy(),
 }
 
@@ -79,6 +80,7 @@ def norm_key(keysym):
         "control_l": "ctrl", "control_r": "ctrl",
         "alt_l": "alt", "alt_r": "alt",
         "return": "enter", "escape": "esc",
+        "prior": "pageup", "next": "pagedown",
     }
     return aliases.get(k, k)
 
@@ -96,7 +98,6 @@ class App:
         self.frames = queue.Queue(maxsize=2)
         self.pressed = set()
         self.bind_mode = None
-        self.capture_action = None
         self.current_image = None
         self.current_photo = None
         self.img_rect = (0, 0, 1, 1)
@@ -104,10 +105,12 @@ class App:
         self.running = True
         self.foreground_package = ""
         self.game_mode = False
-        self.mouse_start = None
+        self.touch_start = None
+        self.touch_last = None
         self.settings = None
+        self.capture_popup = None
+        self.capture_action = None
         self.key_vars = {}
-        self.capture_label = None
         self.joystick_photo = None
         self.build_ui()
         self.bind_inputs()
@@ -131,11 +134,12 @@ class App:
             pass
         return out
 
-    def save_profile(self):
+    def save_profile(self, quiet=False):
         try:
             with open(PROFILE, "w", encoding="utf-8") as f:
                 json.dump(self.profile, f, ensure_ascii=False, indent=2)
-            self.status.set("Настройка сақталды")
+            if not quiet:
+                self.status.set("Настройка сақталды")
         except Exception as ex:
             messagebox.showerror(APP, str(ex))
 
@@ -152,21 +156,23 @@ class App:
         self.btn_connect.pack(side="left")
         self.status = tk.StringVar(value="Қосылмаған")
         ttk.Label(top, textvariable=self.status).pack(side="left", padx=14)
-        self.mode = tk.StringVar(value="MOUSE MODE")
+        self.mode = tk.StringVar(value="⌨ KEYMAP ON" if self.profile.get("mapping_enabled", True) else "⌨ KEYMAP OFF")
         ttk.Label(top, textvariable=self.mode, font=("Segoe UI", 10, "bold")).pack(side="right", padx=(8, 4))
         ttk.Button(top, text="⚙ Настройка", command=self.open_settings).pack(side="right", padx=6)
 
         self.canvas = tk.Canvas(self.root, bg="#101215", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
-        self.canvas.bind("<ButtonPress-1>", self.on_mouse_down)
-        self.canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
-        self.canvas.bind("<ButtonPress-3>", self.on_right_down)
-        self.canvas.bind("<ButtonRelease-3>", self.on_right_up)
-        self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
+        self.canvas.bind("<ButtonPress-1>", self.on_touchpad_down)
+        self.canvas.bind("<B1-Motion>", self.on_touchpad_move)
+        self.canvas.bind("<ButtonRelease-1>", self.on_touchpad_up)
+        self.canvas.bind("<ButtonPress-3>", self.on_touchpad_right)
+        self.canvas.bind("<MouseWheel>", self.on_touchpad_scroll)
+        self.canvas.bind("<Button-4>", lambda e: self.on_touchpad_scroll_linux(e, -1))
+        self.canvas.bind("<Button-5>", lambda e: self.on_touchpad_scroll_linux(e, 1))
 
         bottom = ttk.Frame(self.root, padding=(8, 4, 8, 8))
         bottom.pack(fill="x")
-        ttk.Label(bottom, text="Тышқан әрқашан жұмыс істейді: click = басу, drag = swipe, wheel = scroll. ⚙ белгісі жоғалмайды.").pack(side="left")
+        ttk.Label(bottom, text="Ноутбук touchpad: 1 рет басу = телефонға tap, басып сүйреу = swipe, 2 саусақ scroll = телефонды айналдыру. ⚙ әрқашан бар.").pack(side="left")
 
     def bind_inputs(self):
         self.root.bind_all("<KeyPress>", self.key_down)
@@ -178,16 +184,24 @@ class App:
         except Exception:
             return False
 
+    def capture_open(self):
+        try:
+            return self.capture_popup is not None and self.capture_popup.winfo_exists()
+        except Exception:
+            return False
+
     def open_settings(self):
         if self.settings_open():
+            self.settings.deiconify()
             self.settings.lift()
             self.settings.focus_force()
             return
+
         w = tk.Toplevel(self.root)
         self.settings = w
         w.title("Almas Remote — Настройка")
-        w.geometry("650x650")
-        w.minsize(560, 520)
+        w.geometry("680x680")
+        w.minsize(590, 540)
         w.protocol("WM_DELETE_WINDOW", self.close_settings)
 
         nb = ttk.Notebook(w)
@@ -199,9 +213,10 @@ class App:
         nb.add(points_tab, text="Экран нүктелері")
         nb.add(joystick_tab, text="Joystick / камера")
 
-        ttk.Label(keys_tab, text="Функцияны таңда → 'Перне таңдау' бас → пернетақтадан бір батырма бас.", wraplength=580).pack(anchor="w", pady=(0, 10))
-        self.capture_label = ttk.Label(keys_tab, text="")
-        self.capture_label.pack(anchor="w", pady=(0, 8))
+        self.mapping_var = tk.BooleanVar(value=bool(self.profile.get("mapping_enabled", True)))
+        ttk.Checkbutton(keys_tab, text="⌨ Перне басқаруын қосу", variable=self.mapping_var, command=self.mapping_changed).pack(anchor="w", pady=(0, 12))
+        ttk.Label(keys_tab, text="Функцияны таңда → «Перне таңдау» бас → шыққан кішкентай терезеде клавиатурадан бір батырма бас.", wraplength=610).pack(anchor="w", pady=(0, 10))
+
         self.key_vars = {}
         grid = ttk.Frame(keys_tab)
         grid.pack(fill="x")
@@ -211,29 +226,29 @@ class App:
             self.key_vars[action] = var
             ttk.Label(grid, textvariable=var, width=14, font=("Segoe UI", 10, "bold")).grid(row=row, column=1, sticky="w", padx=8)
             ttk.Button(grid, text="Перне таңдау", command=lambda a=action: self.begin_key_capture(a)).grid(row=row, column=2, sticky="ew", pady=3)
-        ttk.Label(keys_tab, text="Бір перне тек бір функцияда болады. Жаңа функцияға қойсаң, ескі функциядан автоматты алынады.", wraplength=580).pack(anchor="w", pady=(14, 4))
+        ttk.Label(keys_tab, text="Бір перне тек бір функцияда болады. Мысалы A-ны Жүгіруге қойсаң, ол бұрынғы Солға функциясынан автоматты алынады.", wraplength=610).pack(anchor="w", pady=(14, 4))
 
-        ttk.Label(points_tab, text="Алдымен функцияның экрандағы батырмасын көрсет. Батырманы басқан соң настройка жабылады — телефон экранынан қажетті орынды бір рет бас.", wraplength=580).pack(anchor="w", pady=(0, 10))
+        ttk.Label(points_tab, text="Функцияны бас → настройка жабылады → телефон экранында сол батырманың орнын touchpad-пен бір рет бас.", wraplength=610).pack(anchor="w", pady=(0, 10))
         for a in TOUCH_ACTIONS:
             ttk.Button(points_tab, text=f"Экраннан орнын таңдау: {LABELS[a]}", command=lambda x=a: self.start_point_pick(x)).pack(fill="x", pady=3)
 
         try:
             img = Image.open(resource_path("joystick.jpg")).convert("RGB")
-            img.thumbnail((300, 180))
+            img.thumbnail((320, 190))
             self.joystick_photo = ImageTk.PhotoImage(img)
             ttk.Label(joystick_tab, image=self.joystick_photo).pack(pady=(0, 10))
         except Exception:
             ttk.Label(joystick_tab, text="Joystick суреті табылмады").pack()
 
         self.auto_cam_var = tk.BooleanVar(value=bool(self.profile.get("auto_camera_turn", True)))
-        ttk.Checkbutton(joystick_tab, text="Joystick оң/солға бұрылғанда камераны автоматты ыңайлау", variable=self.auto_cam_var, command=self.auto_cam_changed).pack(anchor="w", pady=6)
-        ttk.Label(joystick_tab, text="Камера автоматты бұрылу күші").pack(anchor="w", pady=(12, 2))
+        ttk.Checkbutton(joystick_tab, text="Оң/солға жүргенде камераны автоматты бұру", variable=self.auto_cam_var, command=self.auto_cam_changed).pack(anchor="w", pady=6)
+        ttk.Label(joystick_tab, text="Камера бұрылу күші").pack(anchor="w", pady=(12, 2))
         self.cam_sens_var = tk.DoubleVar(value=float(self.profile.get("camera_sensitivity", 0.09)))
         ttk.Scale(joystick_tab, from_=0.02, to=0.25, variable=self.cam_sens_var, command=self.camera_sens_changed).pack(fill="x")
         ttk.Label(joystick_tab, text="Joystick радиусы").pack(anchor="w", pady=(16, 2))
         self.radius_var = tk.DoubleVar(value=float(self.profile.get("joystick_radius", 0.10)))
         ttk.Scale(joystick_tab, from_=0.03, to=0.22, variable=self.radius_var, command=self.radius_changed).pack(fill="x")
-        ttk.Label(joystick_tab, text="Оңға жүргенде joystick оңға кетеді, ал камера белгіленген аймақта автоматты солға сырғиды. Солға жүргенде керісінше.", wraplength=580).pack(anchor="w", pady=14)
+        ttk.Label(joystick_tab, text="Оңға жүру пернесін ұстасаң: joystick оңға, камера аймағы солға swipe жасайды — ойын экраны оңға бұрылады. Солға жүргенде керісінше.", wraplength=610).pack(anchor="w", pady=14)
 
         footer = ttk.Frame(w, padding=(10, 0, 10, 10))
         footer.pack(fill="x")
@@ -241,14 +256,17 @@ class App:
         ttk.Button(footer, text="Жабу", command=self.close_settings).pack(side="right")
 
     def close_settings(self):
-        self.capture_action = None
+        self.cancel_key_capture()
         try:
             if self.settings is not None:
                 self.settings.destroy()
         except Exception:
             pass
         self.settings = None
-        self.root.focus_force()
+        try:
+            self.root.focus_force()
+        except Exception:
+            pass
 
     def pretty_key(self, k):
         return k.upper() if k else "—"
@@ -258,11 +276,47 @@ class App:
             var.set(self.pretty_key(self.profile["keys"].get(a, "")))
 
     def begin_key_capture(self, action):
+        self.cancel_key_capture()
         self.capture_action = action
-        if self.capture_label:
-            self.capture_label.config(text=f"{KEY_LABELS[action]} үшін пернені қазір бас...")
-        if self.settings_open():
-            self.settings.focus_force()
+        p = tk.Toplevel(self.settings if self.settings_open() else self.root)
+        self.capture_popup = p
+        p.title("Перне таңдау")
+        p.geometry("390x150")
+        p.resizable(False, False)
+        p.transient(self.settings if self.settings_open() else self.root)
+        ttk.Label(p, text=f"{KEY_LABELS[action]} үшін пернені қазір бас", font=("Segoe UI", 13, "bold")).pack(pady=(25, 8))
+        ttk.Label(p, text="Мысалы: A, W, Space, Shift, R...").pack()
+        ttk.Button(p, text="Бас тарту", command=self.cancel_key_capture).pack(pady=12)
+        p.protocol("WM_DELETE_WINDOW", self.cancel_key_capture)
+        p.bind("<KeyPress>", self.capture_key_event)
+        p.after(80, lambda: (p.lift(), p.focus_force(), p.grab_set()))
+
+    def capture_key_event(self, e):
+        if not self.capture_action:
+            return "break"
+        key = norm_key(e.keysym)
+        if key in ("", "esc"):
+            if key == "esc":
+                self.cancel_key_capture()
+            return "break"
+        action = self.capture_action
+        self.assign_key(action, key)
+        self.cancel_key_capture(clear_action=False)
+        return "break"
+
+    def cancel_key_capture(self, clear_action=True):
+        try:
+            if self.capture_popup is not None:
+                try:
+                    self.capture_popup.grab_release()
+                except Exception:
+                    pass
+                self.capture_popup.destroy()
+        except Exception:
+            pass
+        self.capture_popup = None
+        if clear_action:
+            self.capture_action = None
 
     def assign_key(self, action, key):
         keys = self.profile.setdefault("keys", DEFAULT_KEYS.copy())
@@ -270,10 +324,24 @@ class App:
             if a != action and keys.get(a) == key:
                 keys[a] = ""
         keys[action] = key
+        self.profile["mapping_enabled"] = True
+        if hasattr(self, "mapping_var"):
+            try:
+                self.mapping_var.set(True)
+            except Exception:
+                pass
+        self.capture_action = None
         self.refresh_key_vars()
-        self.save_profile()
-        if self.capture_label:
-            self.capture_label.config(text=f"{KEY_LABELS[action]} = {self.pretty_key(key)} сақталды")
+        self.save_profile(quiet=True)
+        self.status.set(f"{KEY_LABELS[action]} = {self.pretty_key(key)} сақталды")
+        self.update_mode_ui()
+
+    def mapping_changed(self):
+        self.profile["mapping_enabled"] = bool(self.mapping_var.get())
+        if not self.profile["mapping_enabled"]:
+            self.pressed.clear()
+        self.save_profile(quiet=True)
+        self.update_mode_ui()
 
     def start_point_pick(self, action):
         self.bind_mode = action
@@ -283,86 +351,108 @@ class App:
 
     def auto_cam_changed(self):
         self.profile["auto_camera_turn"] = bool(self.auto_cam_var.get())
-        self.save_profile()
+        self.save_profile(quiet=True)
 
     def camera_sens_changed(self, _=None):
         self.profile["camera_sensitivity"] = float(self.cam_sens_var.get())
+        self.save_profile(quiet=True)
 
     def radius_changed(self, _=None):
         self.profile["joystick_radius"] = float(self.radius_var.get())
+        self.save_profile(quiet=True)
 
     def in_gear(self, x, y):
         x1, y1, x2, y2 = self.gear_rect
         return x1 <= x <= x2 and y1 <= y <= y2
 
-    def on_mouse_down(self, e):
+    def on_touchpad_down(self, e):
         if self.in_gear(e.x, e.y):
-            self.mouse_start = None
+            self.touch_start = None
+            self.touch_last = None
             self.open_settings()
+            return "break"
+        if self.settings_open() or self.capture_open():
+            return "break"
+        n = self.canvas_to_normalized(e.x, e.y)
+        if n:
+            self.touch_start = (n, time.time())
+            self.touch_last = n
+
+    def on_touchpad_move(self, e):
+        if self.settings_open() or self.capture_open() or not self.touch_start:
             return
         n = self.canvas_to_normalized(e.x, e.y)
         if n:
-            self.mouse_start = (n, time.time())
+            self.touch_last = n
 
-    def on_mouse_up(self, e):
+    def on_touchpad_up(self, e):
         if self.in_gear(e.x, e.y):
-            return
-        end = self.canvas_to_normalized(e.x, e.y)
-        start_info = self.mouse_start
-        self.mouse_start = None
+            self.touch_start = None
+            self.touch_last = None
+            return "break"
+        if self.settings_open() or self.capture_open():
+            self.touch_start = None
+            self.touch_last = None
+            return "break"
+        end = self.canvas_to_normalized(e.x, e.y) or self.touch_last
+        start_info = self.touch_start
+        self.touch_start = None
+        self.touch_last = None
         if not end or not start_info:
             return
         if self.bind_mode:
             self.profile[self.bind_mode] = [end[0], end[1]]
             self.status.set(f"{LABELS[self.bind_mode]} орны сақталды")
             self.bind_mode = None
-            self.save_profile()
+            self.save_profile(quiet=True)
             self.redraw()
             return
         start, t0 = start_info
         dx, dy = end[0] - start[0], end[1] - start[1]
         dist = math.hypot(dx, dy)
-        if dist > 0.012:
+        if dist > 0.010:
             dur = max(90, min(700, int((time.time() - t0) * 1000)))
             self.send(f"SWIPE {start[0]:.5f} {start[1]:.5f} {end[0]:.5f} {end[1]:.5f} {dur}")
         else:
             self.send(f"TAP {end[0]:.5f} {end[1]:.5f}")
 
-    def on_right_down(self, e):
+    def on_touchpad_right(self, e):
+        if self.settings_open() or self.capture_open():
+            return "break"
         n = self.canvas_to_normalized(e.x, e.y)
         if n:
-            self.right_start = (n, time.time())
+            self.send(f"TAP {n[0]:.5f} {n[1]:.5f}")
 
-    def on_right_up(self, e):
-        n = self.canvas_to_normalized(e.x, e.y)
-        if not n:
-            return
-        self.send(f"TAP {n[0]:.5f} {n[1]:.5f}")
-
-    def on_mouse_wheel(self, e):
+    def on_touchpad_scroll(self, e):
+        if self.settings_open() or self.capture_open():
+            return "break"
         c = self.canvas_to_normalized(e.x, e.y)
         if not c:
             return
-        amount = -0.24 if e.delta > 0 else 0.24
+        direction = -1 if e.delta > 0 else 1
+        self.send_scroll(c, direction)
+
+    def on_touchpad_scroll_linux(self, e, direction):
+        if self.settings_open() or self.capture_open():
+            return "break"
+        c = self.canvas_to_normalized(e.x, e.y)
+        if c:
+            self.send_scroll(c, direction)
+
+    def send_scroll(self, c, direction):
+        amount = 0.23 * direction
         y2 = max(0.05, min(0.95, c[1] + amount))
-        self.send(f"SWIPE {c[0]:.5f} {c[1]:.5f} {c[0]:.5f} {y2:.5f} 180")
+        self.send(f"SWIPE {c[0]:.5f} {c[1]:.5f} {c[0]:.5f} {y2:.5f} 170")
 
     def key_down(self, e):
-        k = norm_key(e.keysym)
-        if not k:
+        if self.capture_open() or self.settings_open():
             return
-        if self.capture_action:
-            action = self.capture_action
-            self.capture_action = None
-            self.assign_key(action, k)
-            return "break"
-        if self.settings_open():
+        k = norm_key(e.keysym)
+        if not k or not self.connected or not bool(self.profile.get("mapping_enabled", True)):
             return
         if k in self.pressed:
             return
         self.pressed.add(k)
-        if not self.game_mode:
-            return
         action = self.action_for_key(k)
         if action in ("run", "jump", "fire", "aim", "reload", "interact"):
             self.tap_action(action)
@@ -388,9 +478,10 @@ class App:
     def movement_loop(self):
         while self.running:
             try:
+                mapping = bool(self.profile.get("mapping_enabled", True))
                 dx = (1 if self.key_active("move_right") else 0) - (1 if self.key_active("move_left") else 0)
                 dy = (1 if self.key_active("move_down") else 0) - (1 if self.key_active("move_up") else 0)
-                if self.connected and self.game_mode and (dx or dy):
+                if self.connected and mapping and not self.settings_open() and (dx or dy):
                     mag = math.hypot(dx, dy)
                     dxn, dyn = dx / mag, dy / mag
                     joy = self.profile.get("joystick", [0.18, 0.73])
@@ -401,13 +492,11 @@ class App:
                     cam = self.profile.get("camera", [0.72, 0.50])
                     if auto and dx != 0 and cam:
                         sens = float(self.profile.get("camera_sensitivity", 0.09))
-                        # Joystick оңға -> камера солға, joystick солға -> камера оңға.
                         cx2 = max(0.03, min(0.97, cam[0] - (1 if dx > 0 else -1) * sens))
-                        cy2 = cam[1]
-                        self.send(f"DUALSWIPE {joy[0]:.5f} {joy[1]:.5f} {jx:.5f} {jy:.5f} {cam[0]:.5f} {cam[1]:.5f} {cx2:.5f} {cy2:.5f} 170")
+                        self.send(f"DUALSWIPE {joy[0]:.5f} {joy[1]:.5f} {jx:.5f} {jy:.5f} {cam[0]:.5f} {cam[1]:.5f} {cx2:.5f} {cam[1]:.5f} 190")
                     else:
-                        self.send(f"SWIPE {joy[0]:.5f} {joy[1]:.5f} {jx:.5f} {jy:.5f} 170")
-                    time.sleep(0.15)
+                        self.send(f"SWIPE {joy[0]:.5f} {joy[1]:.5f} {jx:.5f} {jy:.5f} 190")
+                    time.sleep(0.17)
                 else:
                     time.sleep(0.035)
             except Exception:
@@ -435,7 +524,7 @@ class App:
             cs.sendall(f"PIN {pin}\n".encode())
             self.video_sock, self.ctrl_sock = vs, cs
             self.connected = True
-            self.root.after(0, lambda: (self.status.set("Қосылды"), self.btn_connect.config(text="Ажырату")))
+            self.root.after(0, lambda: (self.status.set("Қосылды"), self.btn_connect.config(text="Ажырату"), self.update_mode_ui()))
             threading.Thread(target=self.control_status_loop, args=(cs,), daemon=True).start()
             self.video_loop(vs)
         except Exception as ex:
@@ -456,7 +545,6 @@ class App:
                     active = self.is_game_package(pkg)
                     if active != self.game_mode:
                         self.game_mode = active
-                        self.pressed.clear()
                         self.root.after(0, self.update_mode_ui)
         except Exception:
             pass
@@ -466,13 +554,16 @@ class App:
         return "freefire" in p or p in ("com.dts.freefireth", "com.dts.freefiremax")
 
     def update_mode_ui(self):
-        if self.game_mode:
-            self.mode.set("🎮 GAME MODE — Free Fire")
-            self.status.set("Free Fire: пернетақта mapping қосылды, тышқан да жұмыс істейді")
+        enabled = bool(self.profile.get("mapping_enabled", True))
+        if enabled:
+            self.mode.set("⌨ KEYMAP ON" + (" · Free Fire" if self.game_mode else ""))
         else:
-            self.mode.set("🖱 MOUSE MODE")
-            if self.connected:
-                self.status.set("Тышқан режимі. ⚙ настройка әрқашан қолжетімді")
+            self.mode.set("⌨ KEYMAP OFF")
+        if self.connected:
+            if enabled:
+                self.status.set("Touchpad + перне mapping жұмыс істейді")
+            else:
+                self.status.set("Touchpad жұмыс істейді, перне mapping өшірулі")
         self.redraw()
 
     def recv_exact(self, s, n):
@@ -515,7 +606,7 @@ class App:
                 pass
         self.video_sock = self.ctrl_sock = None
         try:
-            self.root.after(0, lambda: self.mode.set("MOUSE MODE"))
+            self.root.after(0, self.update_mode_ui)
             self.btn_connect.config(text="Қосылу")
         except Exception:
             pass
@@ -588,6 +679,7 @@ class App:
     def close(self):
         self.running = False
         self.disconnect(silent=True)
+        self.cancel_key_capture()
         self.root.destroy()
 
 
