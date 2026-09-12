@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Almas Remote Host</string>
+    <string name="accessibility_description">Allows Almas Remote to perform only the taps and swipes you send from your paired laptop while the service is visibly enabled.</string>
+</resources>
